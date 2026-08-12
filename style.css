@@ -1,0 +1,70 @@
+#narramem-beta-settings {
+  margin-bottom: 0.35rem;
+}
+
+#narramem-beta-settings > .inline-drawer {
+  width: 100%;
+}
+
+#narramem-beta-settings .inline-drawer-header {
+  align-items: center;
+  min-height: 2.2rem;
+}
+
+#narramem-beta-settings .narramem-settings-stack {
+  box-sizing: border-box;
+  display: flex;
+  gap: 0.65rem;
+  padding: 0.45rem 0.2rem 0.2rem;
+}
+
+#narramem-beta-settings .inline-drawer-content.narramem-settings-stack,
+#narramem-beta-settings .narramem-settings-stack {
+  flex-direction: column;
+}
+
+#narramem-beta-settings .narramem-information-box {
+  border-left: 3px solid var(--SmartThemeQuoteColor);
+  padding: 0.5rem 0.65rem;
+}
+
+#narramem-beta-settings .narramem-action-row {
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  width: 100%;
+}
+
+#narramem-beta-settings .narramem-action-row > .menu_button {
+  box-sizing: border-box;
+  margin: 0;
+  min-height: 2.2rem;
+  min-width: 0;
+  white-space: normal;
+  width: 100%;
+}
+
+#narramem-beta-settings label,
+#narramem-beta-settings input,
+#narramem-beta-settings select,
+#narramem-beta-settings textarea {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+
+#narramem-beta-settings .checkbox_label input {
+  width: auto;
+}
+
+#narramem-beta-settings details > summary {
+  cursor: pointer;
+  padding: 0.35rem 0;
+}
+
+@media (max-width: 520px) {
+  #narramem-beta-settings .narramem-action-row {
+    grid-template-columns: 1fr;
+  }
+}

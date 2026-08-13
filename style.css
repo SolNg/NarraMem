@@ -6,6 +6,10 @@
   width: 100%;
 }
 
+#narramem-beta-settings [hidden] {
+  display: none;
+}
+
 #narramem-beta-settings .inline-drawer-header {
   align-items: center;
   min-height: 2.2rem;
@@ -16,6 +20,11 @@
   display: flex;
   gap: 0.65rem;
   padding: 0.45rem 0.2rem 0.2rem;
+}
+
+#narramem-beta-settings .narramem-section,
+#narramem-beta-settings .narramem-field {
+  gap: 0.35rem;
 }
 
 #narramem-beta-settings .inline-drawer-content.narramem-settings-stack,
@@ -33,6 +42,47 @@
   gap: 0.45rem;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
   width: 100%;
+}
+
+#narramem-beta-settings .narramem-profile-grid {
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: minmax(10rem, 1fr) repeat(3, auto);
+  width: 100%;
+}
+
+#narramem-beta-settings .narramem-profile-grid > .menu_button {
+  margin: 0;
+  min-width: 4.5rem;
+}
+
+#narramem-beta-settings .narramem-primary-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+#narramem-beta-settings .narramem-primary-action {
+  box-sizing: border-box;
+  margin: 0;
+  min-height: 2.45rem;
+  width: 100%;
+}
+
+#narramem-beta-settings .narramem-status-card {
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor) 72%, transparent);
+  border: 1px solid var(--SmartThemeBorderColor);
+  border-radius: 0.45rem;
+  line-height: 1.45;
+  padding: 0.65rem;
+  overflow-wrap: anywhere;
+}
+
+#narramem-beta-settings .narramem-privacy-warning {
+  border: 1px solid var(--SmartThemeQuoteColor);
+  margin-bottom: 0.5rem;
+  padding: 0.65rem;
 }
 
 #narramem-beta-settings .narramem-action-row > .menu_button {
@@ -66,5 +116,13 @@
 @media (max-width: 520px) {
   #narramem-beta-settings .narramem-action-row {
     grid-template-columns: 1fr;
+  }
+
+  #narramem-beta-settings .narramem-profile-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  #narramem-beta-settings .narramem-profile-grid > select {
+    grid-column: 1 / -1;
   }
 }

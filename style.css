@@ -2,6 +2,103 @@
   margin-bottom: 0.35rem;
 }
 
+.narramem-memory-progress-toast {
+  position: fixed;
+  z-index: 10020;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(84px, calc(env(safe-area-inset-bottom) + 68px));
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: min(360px, calc(100vw - 28px));
+  min-height: 58px;
+  padding: 11px 12px;
+  border: 1px solid color-mix(in srgb, var(--SmartThemeBorderColor, #888) 65%, transparent);
+  border-radius: 12px;
+  color: var(--SmartThemeBodyColor, #eee);
+  background: color-mix(in srgb, var(--SmartThemeBlurTintColor, #171717) 94%, transparent);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 38%);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  user-select: none;
+}
+
+.narramem-memory-progress-toast[hidden] {
+  display: none;
+}
+
+.narramem-memory-progress-toast__indicator {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  border: 2px solid color-mix(in srgb, var(--SmartThemeQuoteColor, #79b8ff) 35%, transparent);
+  border-top-color: var(--SmartThemeQuoteColor, #79b8ff);
+  border-radius: 50%;
+  animation: narramem-progress-spin 0.9s linear infinite;
+}
+
+.narramem-memory-progress-toast[data-status="success"] .narramem-memory-progress-toast__indicator {
+  border: 0;
+  background: #4fbf78;
+  animation: none;
+}
+
+.narramem-memory-progress-toast[data-status="partial"] .narramem-memory-progress-toast__indicator,
+.narramem-memory-progress-toast[data-status="failed"] .narramem-memory-progress-toast__indicator {
+  border: 0;
+  background: #e7a43b;
+  animation: none;
+}
+
+.narramem-memory-progress-toast[data-status="failed"] .narramem-memory-progress-toast__indicator {
+  background: #d75b5b;
+}
+
+.narramem-memory-progress-toast__copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.narramem-memory-progress-toast__title,
+.narramem-memory-progress-toast__detail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.narramem-memory-progress-toast__title {
+  font-size: 0.95rem;
+}
+
+.narramem-memory-progress-toast__detail {
+  color: var(--SmartThemeEmColor, #bbb);
+  font-size: 0.8rem;
+}
+
+.narramem-memory-progress-toast__close {
+  margin-left: auto;
+  color: var(--SmartThemeEmColor, #bbb);
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+@keyframes narramem-progress-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 520px) {
+  .narramem-memory-progress-toast {
+    right: max(8px, env(safe-area-inset-right));
+    bottom: max(76px, calc(env(safe-area-inset-bottom) + 62px));
+    width: calc(100vw - 16px);
+    min-height: 54px;
+    padding: 9px 10px;
+  }
+}
+
 #narramem-beta-settings > .inline-drawer {
   width: 100%;
 }

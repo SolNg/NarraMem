@@ -1,6 +1,6 @@
 # NarraMem 酒馆内测版安装说明
 
-版本：`0.4.0-beta.36`
+版本：`0.4.0-beta.37`
 
 最低 SillyTavern：`1.18.0`
 
@@ -13,7 +13,7 @@
 3. Git URL 只填写 `https://github.com/sanmingyue/NarraMem-SillyTavern`。
 4. Branch or tag name 保持空白。
 5. 点击“Install just for me”。安装成功后刷新酒馆页面。
-6. 点击聊天输入框上方的“叙忆”按钮，或在扩展设置中打开“NarraMem 叙忆（内测 0.4.0-beta.36）”。选择一个独立 API 配置：Custom 按酒馆自定义 Chat Completion 的习惯填写 URL、Key 和模型；DeepSeek 使用酒馆 1.18 原生 DeepSeek 适配，只填 Key 与模型。
+6. 点击聊天输入框上方的“叙忆”按钮，或在扩展设置中打开“NarraMem 叙忆（内测 0.4.0-beta.37）”。选择一个独立 API 配置：Custom 按酒馆自定义 Chat Completion 的习惯填写 URL、Key 和模型；DeepSeek 使用酒馆 1.18 原生 DeepSeek 适配，只填 Key 与模型。
 7. 主操作互相独立：先“保存配置”，再单独“保存／替换 Key”；“连接并读取模型”只读取列表，不保存其他输入，也不消耗生成调用。记忆模型只会在角色聊天达到批处理门槛后由后台任务调用。
 8. 默认按模型名自动匹配已验证的 NarraMem Prompt。无法识别时，页面会明确提示，并仅允许在“附加参数与高级设置”中手动选择兼容 Prompt。
 

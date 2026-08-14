@@ -27,7 +27,6 @@ body.narramem-modal-open {
 
 .narramem-center-overlay[hidden],
 .narramem-v2-toast[hidden],
-.narramem-memory-progress-toast[hidden],
 .narramem-center-page[hidden],
 .narramem-information-box[hidden],
 .narramem-failure-box[hidden],
@@ -708,8 +707,7 @@ body.narramem-modal-open {
   color: var(--narramem-danger);
 }
 
-.narramem-v2-toast,
-.narramem-memory-progress-toast {
+.narramem-v2-toast {
   position: fixed;
   z-index: 10030;
   right: max(12px, env(safe-area-inset-right));
@@ -734,15 +732,13 @@ body.narramem-modal-open {
   animation: narramem-toast-in 180ms ease-out;
 }
 
-.narramem-v2-toast:focus-visible,
-.narramem-memory-progress-toast:focus-visible {
+.narramem-v2-toast:focus-visible {
   box-shadow:
     0 12px 34px rgb(0 0 0 / 45%),
     0 0 0 2px var(--narramem-accent-soft);
 }
 
-.narramem-v2-toast__indicator,
-.narramem-memory-progress-toast__indicator {
+.narramem-v2-toast__indicator {
   width: 10px;
   height: 10px;
   border: 2px solid color-mix(in srgb, var(--narramem-accent) 34%, transparent);
@@ -751,24 +747,20 @@ body.narramem-modal-open {
   animation: narramem-spin 0.9s linear infinite;
 }
 
-.narramem-v2-toast[data-status="complete"] .narramem-v2-toast__indicator,
-.narramem-memory-progress-toast[data-status="success"] .narramem-memory-progress-toast__indicator {
+.narramem-v2-toast[data-status="complete"] .narramem-v2-toast__indicator {
   border: 0;
   background: var(--narramem-success);
   animation: none;
 }
 
 .narramem-v2-toast[data-status="failed"] .narramem-v2-toast__indicator,
-.narramem-v2-toast[data-status="waiting_for_user"] .narramem-v2-toast__indicator,
-.narramem-memory-progress-toast[data-status="failed"] .narramem-memory-progress-toast__indicator,
-.narramem-memory-progress-toast[data-status="partial"] .narramem-memory-progress-toast__indicator {
+.narramem-v2-toast[data-status="waiting_for_user"] .narramem-v2-toast__indicator {
   border: 0;
   background: var(--narramem-warning);
   animation: none;
 }
 
-.narramem-v2-toast__copy,
-.narramem-memory-progress-toast__copy {
+.narramem-v2-toast__copy {
   display: grid;
   min-width: 0;
   gap: 1px;
@@ -776,27 +768,22 @@ body.narramem-modal-open {
 }
 
 .narramem-v2-toast__copy strong,
-.narramem-v2-toast__copy small,
-.narramem-memory-progress-toast__title,
-.narramem-memory-progress-toast__detail {
+.narramem-v2-toast__copy small {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.narramem-v2-toast__copy strong,
-.narramem-memory-progress-toast__title {
+.narramem-v2-toast__copy strong {
   font-size: 0.82rem;
 }
 
-.narramem-v2-toast__copy small,
-.narramem-memory-progress-toast__detail {
+.narramem-v2-toast__copy small {
   color: var(--narramem-muted);
   font-size: 0.72rem;
 }
 
-.narramem-v2-toast__close,
-.narramem-memory-progress-toast__close {
+.narramem-v2-toast__close {
   padding: 5px;
   color: var(--narramem-muted);
   font-size: 1.05rem;
@@ -995,8 +982,7 @@ body.narramem-modal-open {
     white-space: normal;
   }
 
-  .narramem-v2-toast,
-  .narramem-memory-progress-toast {
+  .narramem-v2-toast {
     right: max(8px, env(safe-area-inset-right));
     bottom: max(68px, calc(env(safe-area-inset-bottom) + 56px));
     width: min(300px, calc(100vw - 16px));
@@ -1036,7 +1022,6 @@ body.narramem-modal-open {
   .narramem-center-overlay,
   .narramem-center-dialog,
   .narramem-v2-toast,
-  .narramem-memory-progress-toast,
   .narramem-progress-value,
   .narramem-button {
     animation: none;

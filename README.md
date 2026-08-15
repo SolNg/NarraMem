@@ -42,11 +42,34 @@ Tên field, giá trị enum và thuật ngữ kỹ thuật (`Recall`, `Checkpoin
 Hai lý do, đều mang tính kỹ thuật chứ không phải ngại việc:
 
 1. **Dịch chúng sẽ làm mất ký ức đã trích xuất.** Digest SHA-256 của nhóm prompt này được gộp vào `prompt_contract_material` và niêm vào từng Checkpoint. Đổi nội dung prompt là đổi digest, khiến mọi Checkpoint tạo bởi bản cũ bị coi là không khớp (`SEMANTIC_COVERAGE_MISMATCH`) và phải trích xuất lại từ đầu.
-2. **Lợi ích gần như bằng không.** Bạn không nhìn thấy nhóm prompt này, nó không quyết định ngôn ngữ đầu ra của bot, và cũng không quyết định ngôn ngữ ký ức được lưu. Nó chỉ là chỉ thị bảo model xuất ra JSON đúng schema — mà ngôn ngữ chỉ thị không cần khớp ngôn ngữ chat.
+2. **Lợi ích gần như bằng không, khi đã ghim ngôn ngữ ở nơi khác.** Bạn không nhìn thấy nhóm prompt này và nó không quyết định ngôn ngữ đầu ra của bot. Nó *có* ảnh hưởng gián tiếp tới ngôn ngữ các trường văn bản tự do trong ký ức — nhưng chỉ vì bản gốc bỏ ngỏ, và chỉ thị nói ở mục trên đã ghim thẳng việc đó rồi. Ngôn ngữ chỉ thị vốn không cần khớp ngôn ngữ chat: prompt tiếng Trung vẫn bóc tách chat tiếng Việt bình thường.
 
 Ngược lại, prompt Recall thì **có** dịch, vì nó không trích xuất gì cả: nó dặn AI viết văn, nên ngôn ngữ của nó ảnh hưởng trực tiếp tới văn phong đầu ra. Digest của nó không nằm trong `prompt_contract_material`, nên dịch nó không đụng tới ký ức cũ.
 
 Nếu bạn muốn *đọc hiểu* nhóm prompt trích xuất đang bảo model làm gì, xem [docs/prompts-vi.md](docs/prompts-vi.md) — bản dịch tham khảo, không phải bản chạy thật.
+
+## Sửa lỗi: xoá chat không dọn Memory Book
+
+`INSTALL_BETA.md` của bản gốc nói rằng xoá một cuộc chat sẽ xoá luôn world book Memory Set tương ứng. Thực tế ở beta.60 việc đó **không xảy ra**, và bản này vá lại.
+
+Nguyên nhân: handler `CHAT_DELETED` gọi `TavernMemoryRegistry` — registry v1 của kiến trúc cũ. Lớp đó đọc `NarraMem__REGISTRY__v1` và chỉ xoá các sách tên `NarraMem__CONTROL__*`, `NarraMem__ARCHIVE__*` cùng 5 tiền tố v1 khác. Runtime hiện tại lại ghi `NarraMem__MEMORY__<id>` và đăng ký trong `NarraMem__REGISTRY__v2` — cả hai đều nằm ngoài tầm biết của đường code đó, nên nó trả về `NOT_FOUND` và không xoá gì.
+
+Trớ trêu là hàm đúng có tồn tại: `TavernMemoryRegistryStore.deleteChat()` xoá thẳng `memory_book_name`. Nhưng nơi duy nhất gọi nó là `resumePendingDeletions()`, vốn chỉ xử lý bản ghi đã mang trạng thái `DELETE_PENDING` — trạng thái mà chỉ chính `deleteChat()` mới đặt được. Vòng khép kín, không có lối vào, nên nó là code chết.
+
+Bản vá cho handler gọi `deleteChat()` của v2 trước, rồi vẫn chạy tiếp lượt quét v1 cho các máy còn sách kiến trúc cũ. Hai lời gọi được cô lập nên một cái lỗi không chặn cái kia, và mục chẩn đoán `deleted_chat_memory_cleanup` giờ báo cả hai kết quả:
+
+```json
+{"status":"DELETED","legacy_status":"NOT_FOUND","memory_book_removed":true,"deleted_worldbook_count":1}
+```
+
+Đối chứng bằng cách chạy thật extension trong jsdom, cho runtime tạo world book rồi phát sự kiện `chat_deleted`:
+
+| | `deleteWorldInfo` được gọi | Memory Book | chẩn đoán |
+|---|---|---|---|
+| bundle gốc | **không lần nào** | còn nguyên | `NOT_FOUND`, xoá 0 file |
+| bundle đã vá | có, đúng tên sách | đã xoá | `DELETED`, xoá 1 file |
+
+Bản vá nằm ở `tools/patches.mjs`, neo bằng regex có nhóm bắt để lấy tên định danh sau minify, và tra tên lớp registry v2 qua AST. Nếu bản gốc đổi cấu trúc khiến neo không khớp đúng một lần, `apply` dừng lại báo lỗi thay vì vá bừa.
 
 ## Cấu trúc repo
 
@@ -54,7 +77,8 @@ Nếu bạn muốn *đọc hiểu* nhóm prompt trích xuất đang bảo model 
 dist/index.js        bundle đã Việt hóa (thứ SillyTavern thực sự nạp)
 dist/index.js.map    sourcemap của bản gốc, kèm toàn bộ source TypeScript
 l10n/                các prompt bản tiếng Việt
-tools/localize.mjs   công cụ áp bản dịch vào bundle
+tools/localize.mjs   công cụ áp bản dịch + bản vá vào bundle
+tools/patches.mjs    các bản vá hành vi (sửa lỗi xoá chat)
 tools/translations.mjs   bảng dịch
 docs/prompts-vi.md   bản dịch tham khảo của prompt trích xuất
 ```

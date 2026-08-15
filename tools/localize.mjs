@@ -23,6 +23,7 @@ import { argv, exit } from "node:process";
 
 import { parse } from "acorn";
 
+import { PATCHES } from "./patches.mjs";
 import { FILE_OVERRIDES, KEEP_PREFIXES, TRANSLATIONS } from "./translations.mjs";
 
 const BUNDLE = "dist/index.js";
@@ -250,7 +251,54 @@ if (missing.size > 0) {
   exit(1);
 }
 
-const out = rewriteSpan(0, source.length);
+let out = rewriteSpan(0, source.length);
+
+/** Find the single class binding declaring every one of `methods`. */
+function classBindingWith(text, methods) {
+  const ast = parse(text, { ecmaVersion: "latest", sourceType: "module" });
+  const hits = [];
+  const inspect = (node, name) => {
+    const declared = node.body.body.filter((m) => m.key?.name).map((m) => m.key.name);
+    if (methods.every((wanted) => declared.includes(wanted))) hits.push(name);
+  };
+  const walk = (node) => {
+    if (node === null || typeof node !== "object") return;
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (node.type === "ClassDeclaration" && node.id) inspect(node, node.id.name);
+    if (node.type === "VariableDeclarator" && node.init?.type === "ClassExpression") {
+      inspect(node.init, node.id.name);
+    }
+    for (const key of Object.keys(node)) {
+      if (!["type", "start", "end", "loc"].includes(key)) walk(node[key]);
+    }
+  };
+  walk(ast);
+  if (hits.length !== 1) {
+    throw new Error(`expected 1 class declaring ${methods.join("/")}, found ${hits.length}`);
+  }
+  return hits[0];
+}
+
+for (const patch of PATCHES) {
+  const matches = [...out.matchAll(new RegExp(patch.find, `${patch.find.flags}g`))];
+  if (matches.length !== 1) {
+    console.error(`patch ${patch.name}: anchor matched ${matches.length} times, expected 1`);
+    exit(1);
+  }
+  const bindings = Object.fromEntries(
+    Object.entries(patch.requires ?? {}).map(([key, methods]) => [
+      key,
+      classBindingWith(out, methods),
+    ]),
+  );
+  const [match] = matches;
+  out =
+    out.slice(0, match.index) +
+    patch.replace(match, bindings) +
+    out.slice(match.index + match[0].length);
+  const named = Object.entries(bindings).map(([key, value]) => `${key}=${value}`).join(" ");
+  console.log(`patch ${patch.name}: applied${named.length > 0 ? ` (${named})` : ""}`);
+}
 
 // The rewrite must stay parseable; a broken bundle would silently disable the
 // extension inside SillyTavern rather than fail loudly.

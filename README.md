@@ -71,6 +71,28 @@ Bản vá cho handler gọi `deleteChat()` của v2 trước, rồi vẫn chạy
 
 Bản vá nằm ở `tools/patches.mjs`, neo bằng regex có nhóm bắt để lấy tên định danh sau minify, và tra tên lớp registry v2 qua AST. Nếu bản gốc đổi cấu trúc khiến neo không khớp đúng một lần, `apply` dừng lại báo lỗi thay vì vá bừa.
 
+## Sửa lỗi: màn hình chính treo ở "Đang kết nối"
+
+beta.67 tách trạng thái nhàn rỗi làm hai, nhưng hai nơi lại dùng **hai điều kiện khác nhau** cho cùng câu hỏi "đã có chat chưa":
+
+```js
+// Panel  — chỉ xét chat_id
+describeNoChatRuntimeState(port.getCurrentIdentity().chat_id !== null)
+// Runtime — xét cả hai
+if (identity.character_id === null || identity.chat_id === null) → no_chat
+```
+
+SillyTavern vẫn trả về `chat_id` của chat mở gần nhất khi bạn đang ở màn hình chính. Nên khi chưa chọn nhân vật: panel thấy `chat_id` có giá trị và báo "Đang kết nối chat hiện tại" kèm thanh tiến trình, còn runtime thấy `character_id` null nên đứng yên ở `no_chat`. Hai bên không bao giờ gặp nhau — spinner quay vô hạn, đúng chỗ đáng lẽ phải bảo người dùng mở thẻ nhân vật.
+
+Bản vá cho panel dùng cùng điều kiện với runtime. Nó chỉ đổi một biến boolean nuôi một dòng chữ: không đụng dữ liệu, không đụng ký ức, không đụng hash Checkpoint.
+
+Đối chứng trong jsdom với `characterId` không xác định và `chat_id` khác null:
+
+| | Hiển thị |
+|---|---|
+| chưa vá | "Đang kết nối chat hiện tại" / "Đang tải" — treo mãi |
+| đã vá | "Hiện không có chat nhân vật nào để xử lý" / "Hãy mở một thẻ nhân vật và lịch sử chat của nó trước." |
+
 ## Cải thiện: kéo chuột để cuộn thanh chip lọc
 
 Thanh chip trong tab Ký ức (`Nhân vật & Thực thể`, `Cảnh & Chương`, …) cuộn ngang được, nhưng CSS gốc đặt `scrollbar-width: none` nên trên máy tính không còn cách nào chạm tới các chip nằm ngoài mép — chuột không kéo được, chỉ còn phím mũi tên.

@@ -226,10 +226,39 @@ const worldbookDeleteResult = {
   },
 };
 
+/**
+ * Make the idle headline agree with the runtime about "is there a chat".
+ *
+ * beta.67 split the idle state in two, but the panel decides with
+ * `getCurrentIdentity().chat_id !== null` while `resolveScope` requires
+ * `character_id !== null && chat_id !== null`. SillyTavern keeps returning the
+ * last chat id on the start screen, so with no character selected the panel
+ * reads "connecting…" while the runtime sits at no_chat — a spinner that never
+ * resolves, exactly where the user is meant to be told to open a card.
+ *
+ * Requiring both fields makes the headline match what the runtime actually
+ * does. It changes one boolean feeding one line of text: no data, no memory, no
+ * Checkpoint hash.
+ */
+const idleHeadlineCondition = {
+  name: "idle-headline-condition",
+  applied: ".character_id!==null&&",
+  // 1: the describe fn  2: the port expression
+  find: /([\w$]+)\(([\w$.]+)\.getCurrentIdentity\(\)\.chat_id!==null\)/u,
+  replace(match) {
+    const [, describe, port] = match;
+    return (
+      `${describe}(${port}.getCurrentIdentity().character_id!==null&&` +
+      `${port}.getCurrentIdentity().chat_id!==null)`
+    );
+  },
+};
+
 export const PATCHES = [
   chatDeleteCleanup,
   moduleTabsDragScroll,
   narrativeTagNormalize,
   narrativeTagProject,
   worldbookDeleteResult,
+  idleHeadlineCondition,
 ];

@@ -194,9 +194,38 @@ const narrativeTagProject = {
     }),
 };
 
+/**
+ * Report worldbook deletion by observation, not by return value.
+ *
+ * `delete_world_info` is bound straight to SillyTavern's `deleteWorldInfo`, and
+ * `TavernMemoryRegistryStore.deleteChat()` treats a falsy result as failure:
+ * it has already marked the record DELETE_PENDING by then, so it throws and
+ * leaves that marker behind. SillyTavern does not document a return value, and
+ * a host that resolves undefined therefore strands a registry record on every
+ * chat deletion. Upstream never hit this because nothing called deleteChat.
+ *
+ * Checking the worldbook list instead is the same check deleteChat performs on
+ * the next line, so a genuine failure is still reported — just not a silent one
+ * invented by an undefined return.
+ */
+const worldbookDeleteResult = {
+  name: "worldbook-delete-result",
+  applied: "__nmName",
+  // 1: everything up to the binding  2: world_names  3: SillyTavern's deleteWorldInfo
+  find: /(get_worldbook_names:\(\)=>(\w+)\?\?\[\],[\s\S]{0,400}?)delete_world_info:(\w+),/u,
+  replace(match) {
+    const [, prefix, worldNames, deleteWorldInfo] = match;
+    return (
+      `${prefix}delete_world_info:async __nmName=>{await ${deleteWorldInfo}(__nmName);` +
+      `return !(${worldNames}??[]).includes(__nmName)},`
+    );
+  },
+};
+
 export const PATCHES = [
   chatDeleteCleanup,
   moduleTabsDragScroll,
   narrativeTagNormalize,
   narrativeTagProject,
+  worldbookDeleteResult,
 ];

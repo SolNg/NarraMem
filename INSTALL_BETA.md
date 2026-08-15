@@ -1,6 +1,6 @@
 # NarraMem 酒馆内测版安装说明
 
-版本：`0.4.0-beta.59`
+版本：`0.4.0-beta.60`
 
 最低 SillyTavern：`1.18.0`
 
@@ -13,8 +13,8 @@
 3. Git URL 只填写 `https://github.com/sanmingyue/NarraMem-SillyTavern`。
 4. Branch or tag name 保持空白。
 5. 点击“Install just for me”。安装成功后刷新酒馆页面。
-6. 点击聊天输入框上方的“叙忆”按钮，或在扩展设置中打开“NarraMem 叙忆（内测 0.4.0-beta.59）”。记忆中心分为总览、记忆、当前任务、设置、日志与数据五页；手机上以底部面板显示。选择一个独立 API 配置：Custom 按酒馆自定义 Chat Completion 的习惯填写 URL、Key 和模型；DeepSeek 使用酒馆 1.18 原生 DeepSeek 适配，只填 Key 与模型。
-7. 主操作互相独立：先“保存配置”，再单独“保存／替换 Key”；“连接并读取模型”只读取列表，不保存其他输入，也不消耗生成调用。记忆模型只会在角色聊天达到批处理门槛后由后台任务调用。
+6. 点击聊天输入框上方的“叙忆”按钮，或在扩展设置中打开“NarraMem 叙忆（内测 0.4.0-beta.60）”。记忆中心分为总览、记忆、当前任务、设置、日志与数据五页；手机上以底部面板显示。选择一个独立 API 配置：Custom 按酒馆自定义 Chat Completion 的习惯填写 URL 与 Key；DeepSeek 使用酒馆 1.18 原生 DeepSeek 适配，只填 Key。
+7. 首次使用只需填写地址和 Key，再点一次“连接并读取模型”：扩展会依次保存当前配置、保存独立 Key、检查 Key 状态并读取模型列表；已有已保存 Key 时输入框留空即可复用。选择模型后会自动保存；接口只返回一个模型时会自动选择并保存。整个连接过程不消耗生成调用。
 8. 默认按模型名自动匹配已验证的 NarraMem Prompt。无法识别时，页面会明确提示，并仅允许在“附加参数与高级设置”中手动选择兼容 Prompt。
 
 后续更新使用酒馆扩展管理器的“更新”功能；始终跟踪独立仓库默认 `main`，不需要填写分支。
@@ -23,7 +23,7 @@
 
 1. 打开 TT 的第三方扩展安装入口，Git URL 同样只填写 `https://github.com/sanmingyue/NarraMem-SillyTavern`，Branch／Tag 保持空白。
 2. 安装后刷新或重启 TT，进入一个角色聊天；看到输入区“叙忆”按钮后，按上面的同一套独立 Memory API 步骤配置即可。
-3. beta.59 会自动探测 TT 宿主，并通过 TT 官方分页历史 API 读取完整聊天；不再要求用户切换“全量加载”，也不会在 TT API 不可用时拿当前窗口片段继续抽取或隐藏。
+3. beta.60 会自动探测 TT 宿主，并通过 TT 官方分页历史 API 读取完整聊天；不再要求用户切换“全量加载”，也不会在 TT API 不可用时拿当前窗口片段继续抽取或隐藏。
 
 NarraMem 是纯前端扩展，不需要也不包含 SillyTavern Node-only 后端插件。TT 与标准酒馆继续共用同一扩展包、Memory Core、世界书格式、Prompt 和更新分支；不会产生第二套 TT 专版数据。
 
@@ -38,7 +38,8 @@ NarraMem 是纯前端扩展，不需要也不包含 SillyTavern Node-only 后端
 - 这是 NarraMem 自己的 endpoint、Key 和 model，不读取或跟随酒馆当前聊天 API、当前模型和预设；角色卡、Persona、世界书与聊天记录只作为记忆资料输入。
 - Key 作为带独立 ID 的“NarraMem Memory API”条目保存在当前 SillyTavern 用户目录的 `secrets.json`。保存后扩展会恢复用户原本启用的 Custom API Key；以后只按 NarraMem 自己的 ID 取用。
 - Key 原值不会写入扩展设置、世界书、日志或导出，也不会从 secrets 接口读回前端。设置页可替换或删除 NarraMem 自己的 Key 条目。
-- 模型列表按钮只访问 `/models`，不会触发模型生成。
+- “连接并读取模型”会先安全保存页面中填写的新 Key，再访问 `/models`；已有 Key 可留空复用，不会触发模型生成。
+- 若连接失败，页面会区分“尚未保存 Key”“本地 Key 保存失败”“Key 被接口拒绝（401/403）”和一般接口失败；单独替换／删除 Key 收在折叠管理区，不是首次配置的必经步骤。
 
 ## 调用边界
 

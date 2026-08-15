@@ -7,68 +7,6 @@
  */
 
 /**
- * Chat deletion never removes the Memory Book (upstream 0.4.0-beta.60).
- *
- * `INSTALL_BETA.md` states that deleting a chat deletes its NarraMem Memory Set
- * worldbook, but the CHAT_DELETED handler calls `TavernMemoryRegistry` — the v1
- * lifecycle registry. That class reads `NarraMem__REGISTRY__v1` and only deletes
- * books named `NarraMem__CONTROL__*`, `NarraMem__ARCHIVE__*` and five other v1
- * prefixes. The modular runtime writes `NarraMem__MEMORY__<id>` and registers it
- * in `NarraMem__REGISTRY__v2`, neither of which that code path knows about, so
- * it returns NOT_FOUND and deletes nothing.
- *
- * The correct v2 routine exists — `TavernMemoryRegistryStore.deleteChat()`, which
- * deletes `memory_book_name` — but its only caller is `resumePendingDeletions()`,
- * which processes records already marked DELETE_PENDING, a status only
- * `deleteChat()` itself sets. Nothing can enter that loop, so it is dead code.
- *
- * This patch runs the v2 routine first and keeps the v1 sweep afterwards for
- * installs carrying legacy books. Each call is isolated so one failure cannot
- * suppress the other, and the diagnostic reports both outcomes.
- */
-const chatDeleteCleanup = {
-  name: "chat-delete-cleanup",
-
-  /** Sentinel proving this patch is already in the bundle. */
-  applied: "__nmV2",
-
-  // Group 1: the whole `let chatId=…,charId=…;` preamble, re-emitted verbatim.
-  // 2: chat id  3: character id  4: host port  5: v1 registry
-  // 6: v1 result  7: recordDiagnostic  8: logError
-  find: new RegExp(
-    String.raw`(let (\w+)=\w+\.replace\(\/\\\.jsonl\$\/iu,""\),(\w+)=(\w+)\.getCurrentIdentity\(\)\.character_id;)` +
-      String.raw`(\w+)\.deleteMemorySetForChat\(\{chat_id:\2,\.\.\.\3===null\?\{\}:\{character_id:\3\}\}\)` +
-      String.raw`\.then\((\w+)=>(\w+)\("deleted_chat_memory_cleanup",\{status:\6\.status,` +
-      String.raw`deleted_worldbook_count:\6\.deleted_worldbook_names\.length,content_recorded:!1\}\),(\w+)\)`,
-    "u",
-  ),
-
-  /** The v2 registry store: the only class exposing this trio of methods. */
-  requires: { store: ["deleteChat", "resumePendingDeletions", "upsert"] },
-
-  replace(match, { store }) {
-    const [, preamble, chatId, charId, port, legacy, , record, logError] = match;
-    // Deliberately verbose local names: the bundle's own identifiers are one or
-    // two characters, so short names here risk shadowing a captured one.
-    return (
-      `${preamble}(async()=>{let __nmV2=null,__nmV1=null,__nmE2=null,__nmE1=null;` +
-      `try{__nmV2=await new ${store}(${port}).deleteChat({host_user_id:"current_sillytavern_user",` +
-      `chat_id:${chatId},...${charId}===null?{}:{character_or_group_id:${charId}}})}catch(__nmX){__nmE2=__nmX}` +
-      `try{__nmV1=await ${legacy}.deleteMemorySetForChat({chat_id:${chatId},` +
-      `...${charId}===null?{}:{character_id:${charId}}})}catch(__nmX){__nmE1=__nmX}` +
-      `${record}("deleted_chat_memory_cleanup",{` +
-      `status:__nmV2===null?"FAILED":__nmV2.status,` +
-      `legacy_status:__nmV1===null?"FAILED":__nmV1.status,` +
-      `memory_book_removed:__nmV2!==null&&__nmV2.removed!==null,` +
-      `deleted_worldbook_count:(__nmV2!==null&&__nmV2.removed!==null?1:0)+` +
-      `(__nmV1===null?0:__nmV1.deleted_worldbook_names.length),` +
-      `content_recorded:!1});` +
-      `if(__nmE2!==null)${logError}(__nmE2);if(__nmE1!==null)${logError}(__nmE1)})()`
-    );
-  },
-};
-
-/**
  * Drag-to-scroll for the module filter strip.
  *
  * `.narramem-module-tabs` scrolls horizontally but sets `scrollbar-width: none`,
@@ -194,38 +132,4 @@ const narrativeTagProject = {
     }),
 };
 
-/**
- * Report worldbook deletion by observation, not by return value.
- *
- * `delete_world_info` is bound straight to SillyTavern's `deleteWorldInfo`, and
- * `TavernMemoryRegistryStore.deleteChat()` treats a falsy result as failure:
- * it has already marked the record DELETE_PENDING by then, so it throws and
- * leaves that marker behind. SillyTavern does not document a return value, and
- * a host that resolves undefined therefore strands a registry record on every
- * chat deletion. Upstream never hit this because nothing called deleteChat.
- *
- * Checking the worldbook list instead is the same check deleteChat performs on
- * the next line, so a genuine failure is still reported — just not a silent one
- * invented by an undefined return.
- */
-const worldbookDeleteResult = {
-  name: "worldbook-delete-result",
-  applied: "__nmName",
-  // 1: everything up to the binding  2: world_names  3: SillyTavern's deleteWorldInfo
-  find: /(get_worldbook_names:\(\)=>(\w+)\?\?\[\],[\s\S]{0,400}?)delete_world_info:(\w+),/u,
-  replace(match) {
-    const [, prefix, worldNames, deleteWorldInfo] = match;
-    return (
-      `${prefix}delete_world_info:async __nmName=>{await ${deleteWorldInfo}(__nmName);` +
-      `return !(${worldNames}??[]).includes(__nmName)},`
-    );
-  },
-};
-
-export const PATCHES = [
-  chatDeleteCleanup,
-  moduleTabsDragScroll,
-  narrativeTagNormalize,
-  narrativeTagProject,
-  worldbookDeleteResult,
-];
+export const PATCHES = [moduleTabsDragScroll, narrativeTagNormalize, narrativeTagProject];

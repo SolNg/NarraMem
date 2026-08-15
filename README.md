@@ -48,28 +48,17 @@ Ngược lại, prompt Recall thì **có** dịch, vì nó không trích xuất 
 
 Nếu bạn muốn *đọc hiểu* nhóm prompt trích xuất đang bảo model làm gì, xem [docs/prompts-vi.md](docs/prompts-vi.md) — bản dịch tham khảo, không phải bản chạy thật.
 
-## Sửa lỗi: xoá chat không dọn Memory Book
+## Hạn chế đã biết: xoá chat không dọn Memory Book
 
-`INSTALL_BETA.md` của bản gốc nói rằng xoá một cuộc chat sẽ xoá luôn world book Memory Set tương ứng. Thực tế ở beta.60 việc đó **không xảy ra**, và bản này vá lại.
+`INSTALL_BETA.md` của bản gốc nói rằng xoá một cuộc chat sẽ xoá luôn world book Memory Set tương ứng. Thực tế ở beta.60 việc đó **không xảy ra**, và bản này **giữ nguyên hành vi bản gốc** — phần xoá không bị đụng tới một ký tự nào.
 
-Nguyên nhân: handler `CHAT_DELETED` gọi `TavernMemoryRegistry` — registry v1 của kiến trúc cũ. Lớp đó đọc `NarraMem__REGISTRY__v1` và chỉ xoá các sách tên `NarraMem__CONTROL__*`, `NarraMem__ARCHIVE__*` cùng 5 tiền tố v1 khác. Runtime hiện tại lại ghi `NarraMem__MEMORY__<id>` và đăng ký trong `NarraMem__REGISTRY__v2` — cả hai đều nằm ngoài tầm biết của đường code đó, nên nó trả về `NOT_FOUND` và không xoá gì.
+Nguyên nhân: handler `CHAT_DELETED` gọi `TavernMemoryRegistry` — registry v1 của kiến trúc cũ. Lớp đó đọc `NarraMem__REGISTRY__v1` và chỉ xoá các sách tên `NarraMem__CONTROL__*`, `NarraMem__ARCHIVE__*` cùng 5 tiền tố v1 khác. Runtime hiện tại lại ghi `NarraMem__MEMORY__<id>` và đăng ký trong `NarraMem__REGISTRY__v2` — cả hai đều nằm ngoài tầm biết của đường code đó, nên nó trả về `NOT_FOUND` và không xoá gì. Hàm đúng (`TavernMemoryRegistryStore.deleteChat()`) có tồn tại nhưng nơi duy nhất gọi nó là `resumePendingDeletions()`, vốn chỉ xử lý bản ghi đã mang trạng thái `DELETE_PENDING` — trạng thái mà chỉ chính `deleteChat()` mới đặt được. Vòng khép kín, không có lối vào.
 
-Trớ trêu là hàm đúng có tồn tại: `TavernMemoryRegistryStore.deleteChat()` xoá thẳng `memory_book_name`. Nhưng nơi duy nhất gọi nó là `resumePendingDeletions()`, vốn chỉ xử lý bản ghi đã mang trạng thái `DELETE_PENDING` — trạng thái mà chỉ chính `deleteChat()` mới đặt được. Vòng khép kín, không có lối vào, nên nó là code chết.
+Kiểm chứng: chạy extension trong jsdom rồi phát sự kiện `chat_deleted` — `deleteWorldInfo` không được gọi lần nào, world book còn nguyên, chẩn đoán báo `NOT_FOUND` và xoá 0 file.
 
-Bản vá cho handler gọi `deleteChat()` của v2 trước, rồi vẫn chạy tiếp lượt quét v1 cho các máy còn sách kiến trúc cũ. Hai lời gọi được cô lập nên một cái lỗi không chặn cái kia, và mục chẩn đoán `deleted_chat_memory_cleanup` giờ báo cả hai kết quả:
+**Hệ quả thực tế:** mỗi chat bị xoá để lại một `NarraMem__MEMORY__…` mồ côi, phải xoá tay. Muốn dọn thì mở `NarraMem__REGISTRY__v2`, đối chiếu `chat_id` trong từng bản ghi với chat còn tồn tại, rồi xoá quyển tương ứng — cẩn thận vì tên sách là chuỗi băm, nhìn không đoán được.
 
-```json
-{"status":"DELETED","legacy_status":"NOT_FOUND","memory_book_removed":true,"deleted_worldbook_count":1}
-```
-
-Đối chứng bằng cách chạy thật extension trong jsdom, cho runtime tạo world book rồi phát sự kiện `chat_deleted`:
-
-| | `deleteWorldInfo` được gọi | Memory Book | chẩn đoán |
-|---|---|---|---|
-| bundle gốc | **không lần nào** | còn nguyên | `NOT_FOUND`, xoá 0 file |
-| bundle đã vá | có, đúng tên sách | đã xoá | `DELETED`, xoá 1 file |
-
-Bản vá nằm ở `tools/patches.mjs`, neo bằng regex có nhóm bắt để lấy tên định danh sau minify, và tra tên lớp registry v2 qua AST. Nếu bản gốc đổi cấu trúc khiến neo không khớp đúng một lần, `apply` dừng lại báo lỗi thay vì vá bừa.
+Một bản vá cho việc này từng được thêm vào rồi **gỡ bỏ theo yêu cầu**, sau khi có nghi ngờ nó liên quan tới một card ngừng được nhận diện. Nghi ngờ đó chưa bao giờ tái hiện được trong kiểm thử, nhưng phần xoá đã được trả về nguyên trạng bản gốc để loại nó khỏi danh sách biến số.
 
 ## Cải thiện: kéo chuột để cuộn thanh chip lọc
 
@@ -114,7 +103,7 @@ dist/index.js        bundle đã Việt hóa (thứ SillyTavern thực sự nạ
 dist/index.js.map    sourcemap của bản gốc, kèm toàn bộ source TypeScript
 l10n/                các prompt bản tiếng Việt
 tools/localize.mjs   công cụ áp bản dịch + bản vá vào bundle
-tools/patches.mjs    các bản vá hành vi (sửa lỗi xoá chat, kéo chuột cuộn chip)
+tools/patches.mjs    các bản vá hành vi (kéo chuột cuộn chip, thẻ nội dung)
 tools/translations.mjs   bảng dịch
 docs/prompts-vi.md   bản dịch tham khảo của prompt trích xuất
 ```

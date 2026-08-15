@@ -1,6 +1,6 @@
 # NarraMem 酒馆内测版安装说明
 
-版本：`0.4.0-beta.58`
+版本：`0.4.0-beta.59`
 
 最低 SillyTavern：`1.18.0`
 
@@ -13,7 +13,7 @@
 3. Git URL 只填写 `https://github.com/sanmingyue/NarraMem-SillyTavern`。
 4. Branch or tag name 保持空白。
 5. 点击“Install just for me”。安装成功后刷新酒馆页面。
-6. 点击聊天输入框上方的“叙忆”按钮，或在扩展设置中打开“NarraMem 叙忆（内测 0.4.0-beta.58）”。记忆中心分为总览、记忆、当前任务、设置、日志与数据五页；手机上以底部面板显示。选择一个独立 API 配置：Custom 按酒馆自定义 Chat Completion 的习惯填写 URL、Key 和模型；DeepSeek 使用酒馆 1.18 原生 DeepSeek 适配，只填 Key 与模型。
+6. 点击聊天输入框上方的“叙忆”按钮，或在扩展设置中打开“NarraMem 叙忆（内测 0.4.0-beta.59）”。记忆中心分为总览、记忆、当前任务、设置、日志与数据五页；手机上以底部面板显示。选择一个独立 API 配置：Custom 按酒馆自定义 Chat Completion 的习惯填写 URL、Key 和模型；DeepSeek 使用酒馆 1.18 原生 DeepSeek 适配，只填 Key 与模型。
 7. 主操作互相独立：先“保存配置”，再单独“保存／替换 Key”；“连接并读取模型”只读取列表，不保存其他输入，也不消耗生成调用。记忆模型只会在角色聊天达到批处理门槛后由后台任务调用。
 8. 默认按模型名自动匹配已验证的 NarraMem Prompt。无法识别时，页面会明确提示，并仅允许在“附加参数与高级设置”中手动选择兼容 Prompt。
 
@@ -21,9 +21,9 @@
 
 ## 从 TauriTavern（TT 酒馆）安装
 
-1. 先在 TT 设置中把聊天加载模式切换为“全量加载”；当前版本不接 TT 的窗口化历史专属 API，未全量加载时不能保证旧楼层完整进入记忆批次。
-2. 打开 TT 的第三方扩展安装入口，Git URL 同样只填写 `https://github.com/sanmingyue/NarraMem-SillyTavern`，Branch／Tag 保持空白。
-3. 安装后刷新或重启 TT，进入一个角色聊天；看到输入区“叙忆”按钮后，按上面的同一套独立 Memory API 步骤配置即可。
+1. 打开 TT 的第三方扩展安装入口，Git URL 同样只填写 `https://github.com/sanmingyue/NarraMem-SillyTavern`，Branch／Tag 保持空白。
+2. 安装后刷新或重启 TT，进入一个角色聊天；看到输入区“叙忆”按钮后，按上面的同一套独立 Memory API 步骤配置即可。
+3. beta.59 会自动探测 TT 宿主，并通过 TT 官方分页历史 API 读取完整聊天；不再要求用户切换“全量加载”，也不会在 TT API 不可用时拿当前窗口片段继续抽取或隐藏。
 
 NarraMem 是纯前端扩展，不需要也不包含 SillyTavern Node-only 后端插件。TT 与标准酒馆继续共用同一扩展包、Memory Core、世界书格式、Prompt 和更新分支；不会产生第二套 TT 专版数据。
 

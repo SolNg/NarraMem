@@ -28,7 +28,16 @@ import { FILE_OVERRIDES, KEEP_PREFIXES, TRANSLATIONS } from "./translations.mjs"
 const BUNDLE = "dist/index.js";
 const CJK = /[一-鿿]/u;
 
-/** Collect every string literal and template literal that contains CJK text. */
+/**
+ * A literal is translatable when it holds Chinese text, or when a file override
+ * names it explicitly. The second case matters for the editable envelope
+ * defaults, which are already English and would otherwise be invisible here.
+ */
+function isTarget(text) {
+  return CJK.test(text) || FILE_OVERRIDES.some((override) => text.startsWith(override.prefix));
+}
+
+/** Collect every translatable string literal and template literal. */
 function collectNodes(source) {
   const ast = parse(source, {
     ecmaVersion: "latest",
@@ -46,11 +55,11 @@ function collectNodes(source) {
     }
     if (typeof node.type !== "string") return;
 
-    if (node.type === "Literal" && typeof node.value === "string" && CJK.test(node.value)) {
+    if (node.type === "Literal" && typeof node.value === "string" && isTarget(node.value)) {
       found.push({ kind: "string", node, ancestors: [...ancestors] });
     } else if (node.type === "TemplateLiteral") {
       const text = node.quasis.map((quasi) => quasi.value.cooked ?? "").join("");
-      if (CJK.test(text)) found.push({ kind: "template", node, ancestors: [...ancestors] });
+      if (isTarget(text)) found.push({ kind: "template", node, ancestors: [...ancestors] });
     }
 
     const next = [...ancestors, node];

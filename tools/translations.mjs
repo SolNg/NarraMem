@@ -14,10 +14,29 @@
  * vocabulary between the UI, the prompts and the persisted records.
  */
 
-/** Prompt bodies whose Vietnamese version lives in a file, matched by prefix. */
+/**
+ * Prompt bodies whose replacement lives in a file, matched by prefix.
+ *
+ * The two envelope entries pin the output language. Nothing in the extraction
+ * prompts states which language the model-authored free-text fields (`summary`,
+ * `title`, `mechanism`, `trigger_summary`, `description`, …) should use, so it
+ * was left to the model — and those fields flow back into the roleplay turn
+ * through the RecallBundle. Both are editable settings defaults and neither is
+ * hashed into `prompt_contract_material` or `parameters_material`, so stating
+ * the rule here costs no Checkpoint invalidation. Each file keeps the upstream
+ * body byte-for-byte and only appends.
+ */
 export const FILE_OVERRIDES = [
   // NM-P0010: injected into the roleplay turn, so its language shapes prose style.
   { prefix: "你正在以当前角色的身份延续正在进行的叙事。", file: "l10n/NM-P0010_vi.md" },
+  // NM-P0027: default identity header, message 1 (system) of every module call.
+  { prefix: "Your identity: Qiuqingzi", file: "l10n/NM-P0027_head_system_vi.md" },
+  // NM-P0029: default material acknowledgement, message 5, an assistant-voice
+  // commitment sitting immediately before the final output contract.
+  {
+    prefix: "The materials for the current NarraMem task have been received",
+    file: "l10n/NM-P0029_material_ack_vi.md",
+  },
 ];
 
 /**
@@ -39,7 +58,6 @@ export const KEEP_PREFIXES = [
   "现在只返回当前 module_id", // NM-P0035 repair contract
   "本条 System 是 NarraMem", // NM-P0032 material envelope
   "上一份 JSON 输出在传输中途截断", // NM-P0033 continuation
-  "Your identity: Qiuqingzi", // default editable identity header
   "NarraMem 叙忆 - ", // SillyTavern secret label
 ];
 

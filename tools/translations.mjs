@@ -185,6 +185,12 @@ export const TRANSLATIONS = {
   // --- Runtime headlines ----------------------------------------------------
   "自动记忆未启用": "Ký ức tự động chưa bật",
   "当前没有可处理的角色聊天": "Hiện không có chat nhân vật nào để xử lý",
+  // beta.67 split "no chat at all" from "chat open, runtime still resolving".
+  "请先打开一张角色卡及其聊天记录。": "Hãy mở một thẻ nhân vật và lịch sử chat của nó trước.",
+  "正在连接当前聊天": "Đang kết nối chat hiện tại",
+  "正在读取聊天、世界书与已有记忆；完成后会自动更新，不会重复调用模型。":
+    "Đang đọc chat, world book và ký ức sẵn có; xong sẽ tự cập nhật, không gọi lại model.",
+  "加载中": "Đang tải",
   "本批有模块需要手动处理": "Đợt này có mô-đun cần xử lý thủ công",
   "后台记忆任务失败，聊天不会受阻": "Tác vụ ký ức nền thất bại, chat vẫn dùng bình thường",
   "后台正在整理记忆": "Đang tổng hợp ký ức ở nền",

@@ -8,7 +8,7 @@ Cài đặt và cách dùng: xem [INSTALL_VI.md](INSTALL_VI.md). Bản gốc ti�
 Extensions → Install extension → https://github.com/SolNg/NarraMem
 ```
 
-Yêu cầu SillyTavern `1.18.0` trở lên. Repo này bám sát nhánh `main` của bản gốc, chỉ khác ở phần ngôn ngữ.
+Yêu cầu SillyTavern `1.18.0` trở lên. Đang theo bản gốc `0.4.0-beta.67`.
 
 ## Đã dịch những gì
 

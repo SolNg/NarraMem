@@ -4,6 +4,10 @@
  * Each patch anchors on a regular expression whose capture groups pick up the
  * minified identifiers, so a rebuild that renames them still matches. A patch
  * must match exactly once — `localize.mjs` aborts otherwise rather than guess.
+ *
+ * Identifiers are matched with `[\w$]+`, not `\w+`: esbuild hands out `$` as a
+ * variable name once the short pool runs out, and beta.67 renamed a captured
+ * binding to exactly that, silently breaking an anchor that looked robust.
  */
 
 /**
@@ -36,10 +40,10 @@ const chatDeleteCleanup = {
   // 2: chat id  3: character id  4: host port  5: v1 registry
   // 6: v1 result  7: recordDiagnostic  8: logError
   find: new RegExp(
-    String.raw`(let (\w+)=\w+\.replace\(\/\\\.jsonl\$\/iu,""\),(\w+)=(\w+)\.getCurrentIdentity\(\)\.character_id;)` +
-      String.raw`(\w+)\.deleteMemorySetForChat\(\{chat_id:\2,\.\.\.\3===null\?\{\}:\{character_id:\3\}\}\)` +
-      String.raw`\.then\((\w+)=>(\w+)\("deleted_chat_memory_cleanup",\{status:\6\.status,` +
-      String.raw`deleted_worldbook_count:\6\.deleted_worldbook_names\.length,content_recorded:!1\}\),(\w+)\)`,
+    String.raw`(let ([\w$]+)=[\w$]+\.replace\(\/\\\.jsonl\$\/iu,""\),([\w$]+)=([\w$]+)\.getCurrentIdentity\(\)\.character_id;)` +
+      String.raw`([\w$]+)\.deleteMemorySetForChat\(\{chat_id:\2,\.\.\.\3===null\?\{\}:\{character_id:\3\}\}\)` +
+      String.raw`\.then\(([\w$]+)=>([\w$]+)\("deleted_chat_memory_cleanup",\{status:\6\.status,` +
+      String.raw`deleted_worldbook_count:\6\.deleted_worldbook_names\.length,content_recorded:!1\}\),([\w$]+)\)`,
     "u",
   ),
 
@@ -107,7 +111,7 @@ const moduleTabsDragScroll = {
   name: "module-tabs-drag-scroll",
   applied: "nmDragScroll",
   // Group 1: the element variable holding the freshly created strip.
-  find: /(\w+)\.className="narramem-module-tabs";/u,
+  find: /([\w$]+)\.className="narramem-module-tabs";/u,
   replace(match) {
     const [, element] = match;
     return `${element}.className="narramem-module-tabs",${DRAG_SCROLL}(${element});`;
@@ -165,7 +169,7 @@ const narrativeTagNormalize = {
   name: "narrative-tag-list-normalize",
   applied: 'x==="*"||',
   // 1: normalize fn  2: default tag const  3: safe-tag pattern const
-  find: /function (\w+)\(e\)\{if\(typeof e!="string"\)return (\w+);let t=e\.trim\(\);return (\w+)\.test\(t\)\?t:\2\}/u,
+  find: /function ([\w$]+)\(e\)\{if\(typeof e!="string"\)return ([\w$]+);let t=e\.trim\(\);return ([\w$]+)\.test\(t\)\?t:\2\}/u,
   replace: (match) =>
     narrativeTagNormalizeSource({ fn: match[1], fallback: match[2], pattern: match[3] }),
 };
@@ -175,12 +179,12 @@ const narrativeTagProject = {
   applied: 'W=L.includes("*")',
   // 1: projection fn  2: default tag const  3: normalize  4: escape  5: strip  6: code-point offset
   find: new RegExp(
-    String.raw`function (\w+)\(e,t,n=(\w+)\)\{if\(t!=="assistant"\)return\{text:e,` +
+    String.raw`function ([\w$]+)\(e,t,n=([\w$]+)\)\{if\(t!=="assistant"\)return\{text:e,` +
       String.raw`strategy:"raw_selected_content",raw_start_code_point:0,` +
-      String.raw`raw_end_code_point:\[\.\.\.e\]\.length\};let i=(\w+)\(n\),r=(\w+)\(i\),` +
-      String.raw`[\s\S]*?text:(\w+)\(e\.slice\(s\.start,s\.end\)\),` +
+      String.raw`raw_end_code_point:\[\.\.\.e\]\.length\};let i=([\w$]+)\(n\),r=([\w$]+)\(i\),` +
+      String.raw`[\s\S]*?text:([\w$]+)\(e\.slice\(s\.start,s\.end\)\),` +
       String.raw`strategy:"assistant_configured_content_block_without_html_comments",` +
-      String.raw`raw_start_code_point:(\w+)\(e,s\.start\),raw_end_code_point:\6\(e,s\.end\)\}\}`,
+      String.raw`raw_start_code_point:([\w$]+)\(e,s\.start\),raw_end_code_point:\6\(e,s\.end\)\}\}`,
     "u",
   ),
   replace: (match) =>
@@ -212,7 +216,7 @@ const worldbookDeleteResult = {
   name: "worldbook-delete-result",
   applied: "__nmName",
   // 1: everything up to the binding  2: world_names  3: SillyTavern's deleteWorldInfo
-  find: /(get_worldbook_names:\(\)=>(\w+)\?\?\[\],[\s\S]{0,400}?)delete_world_info:(\w+),/u,
+  find: /(get_worldbook_names:\(\)=>([\w$]+)\?\?\[\],[\s\S]{0,400}?)delete_world_info:([\w$]+),/u,
   replace(match) {
     const [, prefix, worldNames, deleteWorldInfo] = match;
     return (

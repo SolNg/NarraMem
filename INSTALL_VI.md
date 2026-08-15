@@ -1,6 +1,6 @@
 # Hướng dẫn cài NarraMem (bản tiếng Việt)
 
-Phiên bản: `0.4.0-beta.60`
+Phiên bản: `0.4.0-beta.67`
 
 SillyTavern tối thiểu: `1.18.0`
 

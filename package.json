@@ -1,0 +1,14 @@
+{
+  "name": "narramem-vi",
+  "private": true,
+  "description": "Vietnamese localization tooling for the NarraMem SillyTavern extension",
+  "type": "module",
+  "scripts": {
+    "check": "node tools/localize.mjs check",
+    "apply": "node tools/localize.mjs apply",
+    "extract": "node tools/localize.mjs extract"
+  },
+  "devDependencies": {
+    "acorn": "^8.18.0"
+  }
+}

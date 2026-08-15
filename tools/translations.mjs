@@ -314,6 +314,8 @@ export const TRANSLATIONS = {
   "身份确认（Assistant）": "Xác nhận danh tính (Assistant)",
   "资料收到确认": "Xác nhận đã nhận tư liệu",
   "通用模块化 Prompt": "Prompt mô-đun hóa dùng chung",
+  // Present in upstream source but tree-shaken out of the shipped bundle;
+  // kept so the string is already covered if a later build reaches that path.
   "当前模型无法自动匹配 NarraMem Prompt，请在高级设置选择兼容 Prompt":
     "Model hiện tại không tự khớp được Prompt của NarraMem, hãy chọn Prompt tương thích trong cài đặt nâng cao",
   "不会发送最大上下文、最大回复、温度、Top P 或会话上限；均使用所选模型／服务端默认值。手动修复每点击一次只调用一次，没有总次数上限。":

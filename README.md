@@ -82,6 +82,31 @@ Bản này thêm:
 
 Một cú kéo kết thúc bằng sự kiện `click` rơi trúng chip dưới con trỏ, sẽ vô tình đổi phân loại; nên cú kéo nào thực sự có di chuyển sẽ nuốt đúng một `click` kế tiếp ở pha capture. Click bình thường không bị ảnh hưởng.
 
+## Sửa lỗi: thẻ bọc nội dung AI — nhiều thẻ và tuỳ chọn lấy toàn văn
+
+Bản gốc chỉ đọc **một** thẻ từ tin nhắn AI và *fail-closed*: không tìm thấy khối `<thẻ>…</thẻ>` hoàn chỉnh thì trả về chuỗi rỗng. Thất bại này im lặng và lệch một bên:
+
+- lượt đó **vẫn được tính** vào mốc 14/10 (`validAiWindows` chỉ loại khi `narrative_text === null`, chuỗi rỗng lọt qua);
+- nhưng **không sinh Evidence nào** (`core-source-projection` bỏ qua khi `length === 0`);
+- còn tin nhắn của **bạn** thì không hề bị lọc thẻ.
+
+Kết quả: preset xuất `<story_scene>` trong khi ô cài đặt để `content` sẽ dựng ký ức **chỉ từ nửa hội thoại của bạn**, các lượt cũ vẫn bị ẩn, và không có một cảnh báo nào.
+
+Bản này cho ô thẻ nhận **danh sách cách nhau bằng dấu phẩy**, cộng thêm mục đặc biệt `*`:
+
+| Điền | Nghĩa |
+|---|---|
+| `content` | Y như bản gốc — một thẻ, fail-closed |
+| `content, story_scene` | Thử lần lượt; lấy khối hoàn chỉnh xuất hiện **sau cùng** trong tin nhắn, bất kể của thẻ nào |
+| `content, *` | Có thẻ thì ưu tiên thẻ; không khớp thẻ nào thì lấy **toàn bộ** tin nhắn |
+| `*` | Không lọc thẻ, luôn lấy toàn văn — cho preset không bọc thẻ |
+
+Gộp cả hai vào đúng ô sẵn có nên không phải đụng schema settings, và ô này vốn đã nằm trong `parameters_material` — nghĩa là provenance vẫn trung thực, đồng thời `content` vẫn chuẩn hoá thành `content` y như cũ nên **không đổi hash Checkpoint nào**.
+
+Chuỗi nhập vào được chuẩn hoá tất định: cắt khoảng trắng, khử trùng lặp, loại mục không hợp lệ, nối lại bằng `, `. `  content , story_scene ,, content , <bad> , * ` → `content, story_scene, *`.
+
+Phần payload của bản vá được tách riêng thành hàm dựng mã trong `tools/patches.mjs` để **kiểm thử độc lập**: 30 test bao phủ tương thích ngược, danh sách nhiều thẻ, thứ tự chọn khối, `*`, và các ràng buộc mà `source-snapshot` kiểm tra ở downstream (`raw_end − raw_start ≥ độ dài text`).
+
 ## Cấu trúc repo
 
 ```

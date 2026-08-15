@@ -114,4 +114,89 @@ const moduleTabsDragScroll = {
   },
 };
 
-export const PATCHES = [chatDeleteCleanup, moduleTabsDragScroll];
+/**
+ * Multiple content tags, and an opt-in fallback to the whole message.
+ *
+ * Upstream reads exactly one tag from assistant messages and is fail-closed: no
+ * complete `<tag>…</tag>` block means empty narrative text. That failure is
+ * silent and lopsided — the message still counts toward the batch gate, and user
+ * messages are never tag-filtered, so a preset emitting `<story_scene>` while the
+ * setting says `content` yields memory built from the user's half of the
+ * conversation only, with no warning.
+ *
+ * The tag field now takes a comma-separated list, and the entry `*` means "if no
+ * listed tag matched, use the whole message". Keeping both in the one existing
+ * field avoids touching the settings schema, and the field is already part of
+ * `parameters_material`, so provenance stays honest: a plain `content` normalizes
+ * to `content` exactly as before and changes no Checkpoint hash.
+ */
+export function narrativeTagNormalizeSource({ fn, fallback, pattern }) {
+  return (
+    `function ${fn}(e){if(typeof e!="string")return ${fallback};` +
+    `let t=[...new Set(e.split(",").map(x=>x.trim())` +
+    `.filter(x=>x.length>0&&(x==="*"||${pattern}.test(x))))];` +
+    `return t.length===0?${fallback}:t.join(", ")}`
+  );
+}
+
+export function narrativeProjectSource({ fn, fallback, normalize, escape, strip, offset }) {
+  return (
+    `function ${fn}(e,t,n=${fallback}){` +
+    `if(t!=="assistant")return{text:e,strategy:"raw_selected_content",` +
+    `raw_start_code_point:0,raw_end_code_point:[...e].length};` +
+    `let S="assistant_configured_content_block_without_html_comments",` +
+    `L=${normalize}(n).split(",").map(x=>x.trim()).filter(x=>x.length>0),` +
+    `W=L.includes("*"),b=null;` +
+    `for(let tg of L){if(tg==="*")continue;` +
+    `let r=${escape}(tg),a=new RegExp("<"+r+">","giu"),o=new RegExp("</"+r+">","giu"),c=0;` +
+    `for(;c<e.length;){a.lastIndex=c;let m=a.exec(e);if(m===null)break;` +
+    `let d=m.index+m[0].length;o.lastIndex=d;let u=o.exec(e);if(u===null)break;` +
+    // Mirror upstream's "last complete block", now across every listed tag.
+    `if(b===null||d>b.start)b={start:d,end:u.index};c=u.index+u[0].length}}` +
+    `if(b===null)return W?{text:${strip}(e),strategy:S,raw_start_code_point:0,` +
+    `raw_end_code_point:[...e].length}:{text:"",strategy:S,` +
+    `raw_start_code_point:0,raw_end_code_point:0};` +
+    `return{text:${strip}(e.slice(b.start,b.end)),strategy:S,` +
+    `raw_start_code_point:${offset}(e,b.start),raw_end_code_point:${offset}(e,b.end)}}`
+  );
+}
+
+const narrativeTagNormalize = {
+  name: "narrative-tag-list-normalize",
+  applied: 'x==="*"||',
+  // 1: normalize fn  2: default tag const  3: safe-tag pattern const
+  find: /function (\w+)\(e\)\{if\(typeof e!="string"\)return (\w+);let t=e\.trim\(\);return (\w+)\.test\(t\)\?t:\2\}/u,
+  replace: (match) =>
+    narrativeTagNormalizeSource({ fn: match[1], fallback: match[2], pattern: match[3] }),
+};
+
+const narrativeTagProject = {
+  name: "narrative-tag-list-project",
+  applied: 'W=L.includes("*")',
+  // 1: projection fn  2: default tag const  3: normalize  4: escape  5: strip  6: code-point offset
+  find: new RegExp(
+    String.raw`function (\w+)\(e,t,n=(\w+)\)\{if\(t!=="assistant"\)return\{text:e,` +
+      String.raw`strategy:"raw_selected_content",raw_start_code_point:0,` +
+      String.raw`raw_end_code_point:\[\.\.\.e\]\.length\};let i=(\w+)\(n\),r=(\w+)\(i\),` +
+      String.raw`[\s\S]*?text:(\w+)\(e\.slice\(s\.start,s\.end\)\),` +
+      String.raw`strategy:"assistant_configured_content_block_without_html_comments",` +
+      String.raw`raw_start_code_point:(\w+)\(e,s\.start\),raw_end_code_point:\6\(e,s\.end\)\}\}`,
+    "u",
+  ),
+  replace: (match) =>
+    narrativeProjectSource({
+      fn: match[1],
+      fallback: match[2],
+      normalize: match[3],
+      escape: match[4],
+      strip: match[5],
+      offset: match[6],
+    }),
+};
+
+export const PATCHES = [
+  chatDeleteCleanup,
+  moduleTabsDragScroll,
+  narrativeTagNormalize,
+  narrativeTagProject,
+];

@@ -29,6 +29,9 @@
 const chatDeleteCleanup = {
   name: "chat-delete-cleanup",
 
+  /** Sentinel proving this patch is already in the bundle. */
+  applied: "__nmV2",
+
   // Group 1: the whole `let chatId=…,charId=…;` preamble, re-emitted verbatim.
   // 2: chat id  3: character id  4: host port  5: v1 registry
   // 6: v1 result  7: recordDiagnostic  8: logError
@@ -65,4 +68,50 @@ const chatDeleteCleanup = {
   },
 };
 
-export const PATCHES = [chatDeleteCleanup];
+/**
+ * Drag-to-scroll for the module filter strip.
+ *
+ * `.narramem-module-tabs` scrolls horizontally but sets `scrollbar-width: none`,
+ * so on a desktop the chips past the right edge can only be reached with the
+ * keyboard. Touch already pans natively; this adds mouse drag and wheel support.
+ * The companion CSS restores a thin scrollbar on fine pointers.
+ *
+ * A drag ends with a `click` on whichever chip is under the cursor, which would
+ * switch category by accident, so a drag that actually moved swallows the next
+ * click in the capture phase. A plain click is left untouched.
+ */
+const DRAG_SCROLL = `(el=>{
+if(el.dataset.nmDragScroll==="1")return;el.dataset.nmDragScroll="1";
+let down=!1,moved=!1,startX=0,startLeft=0;
+el.addEventListener("wheel",e=>{
+if(e.deltaY===0||e.deltaX!==0||e.shiftKey)return;
+if(el.scrollWidth<=el.clientWidth)return;
+el.scrollLeft+=e.deltaY;e.preventDefault()},{passive:!1});
+el.addEventListener("pointerdown",e=>{
+if(e.pointerType!=="mouse"||e.button!==0)return;
+down=!0;moved=!1;startX=e.clientX;startLeft=el.scrollLeft});
+el.addEventListener("pointermove",e=>{
+if(!down)return;const dx=e.clientX-startX;
+if(!moved&&Math.abs(dx)<4)return;
+if(!moved){moved=!0;el.classList.add("narramem-dragging");try{el.setPointerCapture(e.pointerId)}catch{}}
+el.scrollLeft=startLeft-dx;e.preventDefault()});
+const end=e=>{if(!down)return;down=!1;
+if(moved){try{el.releasePointerCapture(e.pointerId)}catch{}
+el.classList.remove("narramem-dragging");
+el.addEventListener("click",c=>{c.stopPropagation();c.preventDefault()},{capture:!0,once:!0})}
+moved=!1};
+el.addEventListener("pointerup",end);el.addEventListener("pointercancel",end);
+el.addEventListener("dragstart",e=>{if(moved)e.preventDefault()})})`;
+
+const moduleTabsDragScroll = {
+  name: "module-tabs-drag-scroll",
+  applied: "nmDragScroll",
+  // Group 1: the element variable holding the freshly created strip.
+  find: /(\w+)\.className="narramem-module-tabs";/u,
+  replace(match) {
+    const [, element] = match;
+    return `${element}.className="narramem-module-tabs",${DRAG_SCROLL}(${element});`;
+  },
+};
+
+export const PATCHES = [chatDeleteCleanup, moduleTabsDragScroll];

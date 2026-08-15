@@ -71,6 +71,17 @@ Bản vá cho handler gọi `deleteChat()` của v2 trước, rồi vẫn chạy
 
 Bản vá nằm ở `tools/patches.mjs`, neo bằng regex có nhóm bắt để lấy tên định danh sau minify, và tra tên lớp registry v2 qua AST. Nếu bản gốc đổi cấu trúc khiến neo không khớp đúng một lần, `apply` dừng lại báo lỗi thay vì vá bừa.
 
+## Cải thiện: kéo chuột để cuộn thanh chip lọc
+
+Thanh chip trong tab Ký ức (`Nhân vật & Thực thể`, `Cảnh & Chương`, …) cuộn ngang được, nhưng CSS gốc đặt `scrollbar-width: none` nên trên máy tính không còn cách nào chạm tới các chip nằm ngoài mép — chuột không kéo được, chỉ còn phím mũi tên.
+
+Bản này thêm:
+
+- **CSS**: hiện lại thanh cuộn mảnh và con trỏ `grab` khi dùng chuột (`@media (pointer: fine)`), không đụng gì tới cảm ứng.
+- **JS**: kéo chuột để cuộn, và lăn chuột dọc cũng cuộn ngang.
+
+Một cú kéo kết thúc bằng sự kiện `click` rơi trúng chip dưới con trỏ, sẽ vô tình đổi phân loại; nên cú kéo nào thực sự có di chuyển sẽ nuốt đúng một `click` kế tiếp ở pha capture. Click bình thường không bị ảnh hưởng.
+
 ## Cấu trúc repo
 
 ```
@@ -78,7 +89,7 @@ dist/index.js        bundle đã Việt hóa (thứ SillyTavern thực sự nạ
 dist/index.js.map    sourcemap của bản gốc, kèm toàn bộ source TypeScript
 l10n/                các prompt bản tiếng Việt
 tools/localize.mjs   công cụ áp bản dịch + bản vá vào bundle
-tools/patches.mjs    các bản vá hành vi (sửa lỗi xoá chat)
+tools/patches.mjs    các bản vá hành vi (sửa lỗi xoá chat, kéo chuột cuộn chip)
 tools/translations.mjs   bảng dịch
 docs/prompts-vi.md   bản dịch tham khảo của prompt trích xuất
 ```

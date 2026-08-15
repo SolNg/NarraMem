@@ -1,0 +1,33 @@
+/*
+ * Vietnamese fork: the module filter strip scrolls horizontally but hides its
+ * scrollbar, which leaves a mouse user with no way to reach the chips past the
+ * edge. Restore a thin scrollbar on fine pointers; drag and wheel support is
+ * attached in the bundle.
+ */
+@media (pointer: fine) {
+  .narramem-module-tabs {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 18%) transparent;
+    cursor: grab;
+  }
+
+  .narramem-module-tabs::-webkit-scrollbar {
+    display: block;
+    height: 6px;
+  }
+
+  .narramem-module-tabs::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgb(255 255 255 / 18%);
+  }
+
+  .narramem-module-tabs::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .narramem-module-tabs.narramem-dragging {
+    cursor: grabbing;
+    scroll-snap-type: none;
+    scroll-behavior: auto;
+  }
+}

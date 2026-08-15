@@ -27,6 +27,8 @@ import { PATCHES } from "./patches.mjs";
 import { FILE_OVERRIDES, KEEP_PREFIXES, TRANSLATIONS } from "./translations.mjs";
 
 const BUNDLE = "dist/index.js";
+const STYLESHEET = "style.css";
+const STYLE_TWEAKS = "l10n/ui-tweaks.css";
 const CJK = /[一-鿿]/u;
 
 /**
@@ -280,6 +282,10 @@ function classBindingWith(text, methods) {
 }
 
 for (const patch of PATCHES) {
+  if (patch.applied !== undefined && out.includes(patch.applied)) {
+    console.log(`patch ${patch.name}: already present, skipped`);
+    continue;
+  }
   const matches = [...out.matchAll(new RegExp(patch.find, `${patch.find.flags}g`))];
   if (matches.length !== 1) {
     console.error(`patch ${patch.name}: anchor matched ${matches.length} times, expected 1`);
@@ -305,3 +311,16 @@ for (const patch of PATCHES) {
 parse(out, { ecmaVersion: "latest", sourceType: "module", allowHashBang: true });
 writeFileSync(BUNDLE, out);
 console.log(`wrote ${BUNDLE} (${source.length} -> ${out.length} bytes)`);
+
+// The manifest allows a single stylesheet, so the fork's CSS is appended to the
+// upstream one. Doing it here keeps `apply` the single reproducible step: drop
+// upstream's files in, run it, and every fork change is back.
+const tweaks = readFileSync(STYLE_TWEAKS, "utf8").trim();
+const style = readFileSync(STYLESHEET, "utf8");
+const marker = tweaks.split("\n")[1] ?? tweaks.slice(0, 40);
+if (style.includes(marker)) {
+  console.log(`${STYLESHEET} already carries the fork styles`);
+} else {
+  writeFileSync(STYLESHEET, `${style.trimEnd()}\n\n${tweaks}\n`);
+  console.log(`appended ${STYLE_TWEAKS} to ${STYLESHEET}`);
+}

@@ -23,7 +23,7 @@ Cập nhật về sau dùng chức năng "Update" của trình quản lý extens
 
 1. Mở mục cài extension bên thứ ba của TT, Git URL cũng điền `https://github.com/SolNg/NarraMem`, Branch/Tag để trống.
 2. Cài xong thì tải lại hoặc khởi động lại TT, vào một cuộc chat nhân vật; khi thấy nút "NarraMem" ở khu vực nhập liệu thì cấu hình Memory API riêng theo đúng các bước ở trên.
-3. beta.60 tự dò được host TT và đọc toàn bộ lịch sử chat qua API phân trang chính thức của TT; không còn bắt người dùng bật "tải toàn bộ", và cũng không lấy đoạn cửa sổ hiện tại để trích xuất hay ẩn lượt khi API của TT không dùng được.
+3. beta.67 tự dò được host TT và đọc toàn bộ lịch sử chat qua API phân trang chính thức của TT; không còn bắt người dùng bật "tải toàn bộ", và cũng không lấy đoạn cửa sổ hiện tại để trích xuất hay ẩn lượt khi API của TT không dùng được.
 
 NarraMem là extension thuần frontend, không cần và không chứa plugin backend Node-only của SillyTavern. TT và SillyTavern bản chuẩn dùng chung cùng một gói extension, cùng Memory Core, cùng định dạng world book, cùng Prompt và cùng nhánh cập nhật; sẽ không sinh ra bộ dữ liệu riêng cho TT.
 

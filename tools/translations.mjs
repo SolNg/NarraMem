@@ -61,6 +61,13 @@ export const KEEP_PREFIXES = [
   "NarraMem 叙忆 - ", // SillyTavern secret label
 ];
 
+/**
+ * A few keys no longer appear in the shipped bundle — beta.70 replaced the old
+ * collecting/loading wording with the progress display, and one settings string
+ * is tree-shaken out. They are kept rather than deleted: an extra key costs
+ * nothing, while a missing one stops `apply`. `check` only ever complains about
+ * strings it cannot translate, never about strings it no longer needs.
+ */
 export const TRANSLATIONS = {
   // --- Navigation and section headings -------------------------------------
   "总览": "Tổng quan",
@@ -185,6 +192,30 @@ export const TRANSLATIONS = {
   // --- Runtime headlines ----------------------------------------------------
   "自动记忆未启用": "Ký ức tự động chưa bật",
   "当前没有可处理的角色聊天": "Hiện không có chat nhân vật nào để xử lý",
+  // beta.70 added a collection-progress display and a TauriTavern sync state.
+  "记忆尚未达到处理条件": "Chưa đủ điều kiện để xử lý ký ức",
+  "当前已收集 {0}/{1} 个有效 AI 楼层；达到 {2} 后会自动整理最早 {3} 个，并保留最新 {4} 个用于剧情衔接。":
+    "Đã thu thập {0}/{1} lượt AI hợp lệ; đủ {2} sẽ tự tổng hợp {3} lượt sớm nhất và giữ lại {4} lượt mới nhất để mạch truyện liền lạc.",
+  "已收集 {0}/{1}": "Đã thu {0}/{1}",
+  "已收集 AI 楼层": "Lượt AI đã thu thập",
+  "正在积累下一次记忆更新": "Đang gom cho lần cập nhật ký ức tới",
+  "当前已积累 {0}/{1} 个新的可处理 AI 楼层；达到 {2} 后会自动更新已有记忆，并继续保留最新 {3} 个 AI 楼层。":
+    "Đã gom {0}/{1} lượt AI mới xử lý được; đủ {2} sẽ tự cập nhật ký ức sẵn có và vẫn giữ lại {3} lượt AI mới nhất.",
+  "已积累 {0}/{1}": "Đã gom {0}/{1}",
+  "本次已积累 AI 楼层": "Lượt AI đã gom đợt này",
+  "正在等待 TauriTavern 同步完整聊天":
+    "Đang chờ TauriTavern đồng bộ toàn bộ chat",
+  "当前不会调用 Memory API、抽取新记忆或隐藏楼层。可点击“刷新状态”重新读取完整聊天。":
+    "Hiện không gọi Memory API, không trích xuất ký ức mới và không ẩn lượt nào. Bấm “Làm mới trạng thái” để đọc lại toàn bộ chat.",
+  "正在等待 TauriTavern 完整聊天同步；不会调用模型或隐藏楼层":
+    "Đang chờ TauriTavern đồng bộ toàn bộ chat; không gọi model và không ẩn lượt nào",
+  "等待 TT 同步": "Chờ TT đồng bộ",
+  "刷新状态": "Làm mới trạng thái",
+  "刷新失败：{0}": "Làm mới thất bại: {0}",
+  "正在连接": "Đang kết nối",
+  "正在积累": "Đang gom",
+  "已完成记忆模块": "Mô-đun ký ức đã xong",
+
   // beta.67 split "no chat at all" from "chat open, runtime still resolving".
   "请先打开一张角色卡及其聊天记录。": "Hãy mở một thẻ nhân vật và lịch sử chat của nó trước.",
   "正在连接当前聊天": "Đang kết nối chat hiện tại",
@@ -432,6 +463,14 @@ export const TRANSLATIONS = {
   // --- TauriTavern host -----------------------------------------------------
   "TauriTavern 返回了无效的聊天历史页":
     "TauriTavern trả về trang lịch sử chat không hợp lệ",
+  // beta.70 added these host-reader failures.
+  "TauriTavern 当前聊天身份尚未同步完成":
+    "Danh tính chat hiện tại của TauriTavern chưa đồng bộ xong",
+  "TauriTavern 完整聊天读取失败": "Đọc toàn bộ chat của TauriTavern thất bại",
+  "TauriTavern 主进程尚未就绪": "Tiến trình chính của TauriTavern chưa sẵn sàng",
+  "TauriTavern 尾页读取失败": "Đọc trang cuối của TauriTavern thất bại",
+  "TauriTavern 更早历史页读取失败":
+    "Đọc trang lịch sử cũ hơn của TauriTavern thất bại",
   "TauriTavern 完整聊天尚未读取完成": "Chưa đọc xong toàn bộ chat của TauriTavern",
   "TauriTavern 当前可写聊天窗口不是完整权威聊天，拒绝隐藏楼层":
     "Cửa sổ chat ghi được của TauriTavern không phải bản chat đầy đủ, từ chối ẩn lượt",

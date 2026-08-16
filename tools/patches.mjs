@@ -229,27 +229,31 @@ const worldbookDeleteResult = {
 /**
  * Make the idle headline agree with the runtime about "is there a chat".
  *
- * beta.67 split the idle state in two, but the panel decides with
- * `getCurrentIdentity().chat_id !== null` while `resolveScope` requires
- * `character_id !== null && chat_id !== null`. SillyTavern keeps returning the
- * last chat id on the start screen, so with no character selected the panel
- * reads "connecting…" while the runtime sits at no_chat — a spinner that never
- * resolves, exactly where the user is meant to be told to open a card.
+ * The panel decides with `getCurrentIdentity().chat_id !== null` while
+ * `resolveScope` requires `character_id !== null && chat_id !== null`.
+ * SillyTavern keeps returning the last chat id on the start screen, so with no
+ * character selected the two disagree: the runtime sits at no_chat while the
+ * panel believes a chat is present and reports progress for it — a spinner in
+ * beta.67, a "collected 0/14" counter in beta.70. Either way the one screen
+ * that should say "open a character card" says something else.
  *
  * Requiring both fields makes the headline match what the runtime actually
  * does. It changes one boolean feeding one line of text: no data, no memory, no
  * Checkpoint hash.
+ *
+ * Still unfixed as of beta.70; the anchor moved because upstream lifted the
+ * expression into a `hasCurrentChat` binding, not because the check changed.
  */
 const idleHeadlineCondition = {
   name: "idle-headline-condition",
   applied: ".character_id!==null&&",
-  // 1: the describe fn  2: the port expression
-  find: /([\w$]+)\(([\w$.]+)\.getCurrentIdentity\(\)\.chat_id!==null\)/u,
+  // 1: the hasCurrentChat binding  2: the port expression
+  find: /let ([\w$]+)=([\w$.]+)\.getCurrentIdentity\(\)\.chat_id!==null,/u,
   replace(match) {
-    const [, describe, port] = match;
+    const [, binding, port] = match;
     return (
-      `${describe}(${port}.getCurrentIdentity().character_id!==null&&` +
-      `${port}.getCurrentIdentity().chat_id!==null)`
+      `let ${binding}=${port}.getCurrentIdentity().character_id!==null&&` +
+      `${port}.getCurrentIdentity().chat_id!==null,`
     );
   },
 };

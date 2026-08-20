@@ -8,7 +8,7 @@ Cài đặt và cách dùng: xem [INSTALL_VI.md](INSTALL_VI.md). Bản gốc ti�
 Extensions → Install extension → https://github.com/SolNg/NarraMem
 ```
 
-Yêu cầu SillyTavern `1.18.0` trở lên. Đang theo bản gốc `0.4.0-beta.70`.
+Yêu cầu SillyTavern `1.18.0` trở lên. Đang theo bản gốc `0.4.0-beta.74`.
 
 ## Đã dịch những gì
 
@@ -73,7 +73,7 @@ Bản vá nằm ở `tools/patches.mjs`, neo bằng regex có nhóm bắt để 
 
 ## Sửa lỗi: màn hình chính treo ở "Đang kết nối"
 
-beta.67 tách trạng thái nhàn rỗi làm hai, nhưng hai nơi dùng **hai điều kiện khác nhau** cho cùng câu hỏi "đã có chat chưa" — và tới beta.70 vẫn chưa sửa:
+beta.67 tách trạng thái nhàn rỗi làm hai, nhưng hai nơi dùng **hai điều kiện khác nhau** cho cùng câu hỏi "đã có chat chưa" — và tới beta.74 vẫn chưa sửa:
 
 ```js
 // Panel  — chỉ xét chat_id
@@ -90,7 +90,7 @@ Bản vá cho panel dùng cùng điều kiện với runtime. Nó chỉ đổi m
 
 | | Hiển thị |
 |---|---|
-| chưa vá | beta.67: "Đang kết nối" treo mãi · beta.70: đếm "Đã thu 0/14" cho một chat không tồn tại |
+| chưa vá | beta.67: "Đang kết nối" treo mãi · beta.70–74: đếm "Đã thu 0/14" cho một chat không tồn tại |
 | đã vá | "Hiện không có chat nhân vật nào để xử lý" / "Hãy mở một thẻ nhân vật và lịch sử chat của nó trước." |
 
 ## Cải thiện: kéo chuột để cuộn thanh chip lọc

@@ -192,6 +192,10 @@ export const TRANSLATIONS = {
   // --- Runtime headlines ----------------------------------------------------
   "自动记忆未启用": "Ký ức tự động chưa bật",
   "当前没有可处理的角色聊天": "Hiện không có chat nhân vật nào để xử lý",
+  // beta.74 recovery path for a Memory Book that vanished under the runtime.
+  "Memory Book 恢复未能确认楼层可见性重置":
+    "Khôi phục Memory Book không xác nhận được việc bỏ ẩn các lượt",
+
   // beta.70 added a collection-progress display and a TauriTavern sync state.
   "记忆尚未达到处理条件": "Chưa đủ điều kiện để xử lý ký ức",
   "当前已收集 {0}/{1} 个有效 AI 楼层；达到 {2} 后会自动整理最早 {3} 个，并保留最新 {4} 个用于剧情衔接。":

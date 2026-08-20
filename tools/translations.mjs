@@ -263,7 +263,11 @@ export const TRANSLATIONS = {
     "Xử lý lại từ lượt {0}? Các ký ức phụ thuộc sau lượt này sẽ được hoàn tác và dựng lại.",
   "重新处理失败：{0}": "Xử lý lại thất bại: {0}",
   "读取记忆失败：{0}": "Đọc ký ức thất bại: {0}",
-  "手动修复失败：{0}": "Sửa thủ công thất bại: {0}",
+  // beta.75 renamed 手动修复 -> 手动处理 and replaced the hard "no module is
+  // waiting" throw with a graceful notice when the task state moved on.
+  "手动处理失败：{0}": "Xử lý thủ công thất bại: {0}",
+  "任务状态刚刚发生变化，本次没有重复调用；页面已显示当前任务。":
+    "Trạng thái tác vụ vừa thay đổi nên lần này không gọi lại; trang đã hiển thị tác vụ hiện tại.",
 
   // --- Settings: automation -------------------------------------------------
   "启用 NarraMem 自动记忆": "Bật ký ức tự động NarraMem",
@@ -425,7 +429,6 @@ export const TRANSLATIONS = {
 
   // --- Runtime errors -------------------------------------------------------
   "NarraMem 运行时尚未启用": "Tiến trình NarraMem chưa được bật",
-  "当前没有等待手动修复的模块": "Hiện không có mô-đun nào chờ sửa thủ công",
   "重新处理楼层必须是非负整数": "Lượt cần xử lý lại phải là số nguyên không âm",
   "当前聊天中不存在楼层 {0}": "Chat hiện tại không có lượt {0}",
   "无法读取重新处理楼层": "Không đọc được lượt cần xử lý lại",

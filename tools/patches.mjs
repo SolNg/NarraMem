@@ -258,6 +258,125 @@ const idleHeadlineCondition = {
   },
 };
 
+/**
+ * A batch that fails the finalizer freezes with no way to retry (upstream
+ * 0.4.0-beta.75).
+ *
+ * When all seven modules commit, the batch moves to FINALIZING and the runtime
+ * compiles the trusted Checkpoint locally — no model call. If that compile
+ * throws, `commitFailure()` records `finalization_error_code` but deliberately
+ * leaves `work_state.status` at FINALIZING, because the contract says the step
+ * "remains retryable and the old checkpoint stays active".
+ *
+ * Nothing retries it. The runtime catch block publishes the snapshot as
+ * `failed`, and `shouldContinue()` only chains on running/finalizing/
+ * recall_ready — so the 1.5s idle chain stops. Meanwhile the panel shows the
+ * failure box but hides its only button: `findManualRepairModule()` returns
+ * null unless the batch status is NEEDS_USER or READY, and here it is
+ * FINALIZING with every module COMMITTED. `active_module_id` is null too, so
+ * the box reads "failed module: unknown" above no control at all.
+ *
+ * The state machine is fine — re-entering it retries the compile, which is why
+ * "refresh status" already unsticks it. This patch stops hiding that: the
+ * button stays visible whenever the failure box is up, and when no module is
+ * individually repairable it relabels itself and runs the same refresh instead
+ * of the per-module repair. The label is captured from the button's own initial
+ * text on first render, so the translated string is never duplicated here.
+ */
+const finalizerRetryButton = {
+  name: "finalizer-retry-button",
+  applied: "nmStuckLabel",
+  // 1: the repair button  2: the repairable module  3: the busy flag
+  find: /,([\w$]+)\.hidden=([\w$]+)===null,\1\.disabled=([\w$]+)\),/u,
+  replace(match) {
+    const [, repairButton, repairModule, busy] = match;
+    return (
+      `,${repairButton}.dataset.nmStuckLabel??=${repairButton}.textContent,` +
+      `${repairButton}.textContent=${repairModule}===null` +
+      `?"Thử lại bước đang kẹt (không tốn lần gọi)"` +
+      `:${repairButton}.dataset.nmStuckLabel,` +
+      `${repairButton}.hidden=!1,${repairButton}.disabled=${busy}),`
+    );
+  },
+};
+
+/**
+ * Companion to `finalizer-retry-button`: give the now-visible button something
+ * to do when no single module is the culprit.
+ *
+ * The click handler bails out on exactly the condition that leaves the batch
+ * stuck, so showing the button without this would produce a dead control. The
+ * fallback path calls `on_refresh()` — the same handler behind "refresh status",
+ * which re-reads the host chat and re-enters the runtime, hitting the FINALIZING
+ * branch and recompiling. TT sync errors stay silent here for the same reason
+ * they do on the refresh button: they are transient and already surfaced in the
+ * headline.
+ */
+const finalizerRetryAction = {
+  name: "finalizer-retry-action",
+  applied: "__nmStuck",
+  // 1: button  2: busy  3: findManualRepairModule  4: snapshot  5: setBusy  6: options
+  find: new RegExp(
+    String.raw`([\w$]+)\.addEventListener\("click",\(\)=>\{([\w$]+)\|\|` +
+      String.raw`([\w$]+)\(([\w$]+)\.module_states,\4\.batch_status\)===null\|\|` +
+      String.raw`\(([\w$]+)\(!0\),([\w$]+)\.on_manual_repair\(\)`,
+    "u",
+  ),
+  replace(match) {
+    const [, button, busy, findModule, snapshot, setBusy, options] = match;
+    return (
+      `${button}.addEventListener("click",()=>{if(${busy})return;` +
+      `if(${findModule}(${snapshot}.module_states,${snapshot}.batch_status)===null){` +
+      `${setBusy}(!0),${options}.on_refresh().catch(__nmStuck=>{` +
+      `String(__nmStuck?.code??"").startsWith("TT_CHAT_")||` +
+      `globalThis.alert("Thử lại thất bại: "+String(__nmStuck?.message??__nmStuck))` +
+      `}).finally(()=>${setBusy}(!1));return}` +
+      `(${setBusy}(!0),${options}.on_manual_repair()`
+    );
+  },
+};
+
+/**
+ * The finalizer's real error message is thrown away (upstream 0.4.0-beta.75).
+ *
+ * `finalizationError()` maps eight recognised messages to specific codes and
+ * funnels everything else into FINALIZER_CONTRACT_FAILED — a catch-all covering
+ * at least six distinct failures ("M3 has no complete cold-readable partition",
+ * "Novel Evidence … is missing from the current ledger", "THREAD_IMPACT head is
+ * not an object", and more). The diagnostic then records only the code, so the
+ * log cannot tell them apart and the panel shows a generic sentence.
+ *
+ * This patch records the underlying message alongside the code. Every message
+ * in that family is structural — module ids, record ids, evidence ids, all
+ * hashes — so `content_recorded: false` still holds. The one exception is the
+ * Core wire schema message, which embeds a validator report that can quote a
+ * field value; its tail is dropped rather than logged.
+ */
+const finalizerErrorDetail = {
+  name: "finalizer-error-detail",
+  applied: "__nmDetail",
+  // 1: the raw error  2: the descriptor  3: errorDescriptor  4: the batch
+  find: new RegExp(
+    String.raw`on_failure_diagnostic:([\w$]+)=>\{let ([\w$]+)=([\w$]+)\(\1\);` +
+      String.raw`this\.options\.on_diagnostic\?\.\("batch_finalization_failed",` +
+      String.raw`\{batch_id:([\w$]+)\.batch_id,error_code:\2\.code,content_recorded:!1\}\)\}`,
+    "u",
+  ),
+  replace(match) {
+    const [, error, descriptor, describe, batch] = match;
+    return (
+      `on_failure_diagnostic:${error}=>{let ${descriptor}=${describe}(${error}),` +
+      `__nmDetail=String(${descriptor}.message??"");` +
+      `__nmDetail=/failed Core wire schema:/u.test(__nmDetail)` +
+      `?__nmDetail.slice(0,__nmDetail.indexOf(":")+1)+" <lược bỏ>"` +
+      `:__nmDetail.slice(0,240);` +
+      `this.options.on_diagnostic?.("batch_finalization_failed",` +
+      `{batch_id:${batch}.batch_id,error_code:${descriptor}.code,` +
+      `error_detail:__nmDetail,content_recorded:!1})}`
+    );
+  },
+};
+
 export const PATCHES = [
   chatDeleteCleanup,
   moduleTabsDragScroll,
@@ -265,4 +384,7 @@ export const PATCHES = [
   narrativeTagProject,
   worldbookDeleteResult,
   idleHeadlineCondition,
+  finalizerRetryButton,
+  finalizerRetryAction,
+  finalizerErrorDetail,
 ];

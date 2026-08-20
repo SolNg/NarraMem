@@ -129,6 +129,40 @@ Chuỗi nhập vào được chuẩn hoá tất định: cắt khoảng trắng,
 
 Phần payload của bản vá được tách riêng thành hàm dựng mã trong `tools/patches.mjs` để **kiểm thử độc lập**: 30 test bao phủ tương thích ngược, danh sách nhiều thẻ, thứ tự chọn khối, `*`, và các ràng buộc mà `source-snapshot` kiểm tra ở downstream (`raw_end − raw_start ≥ độ dài text`).
 
+## Sửa lỗi: kẹt cứng khi biên dịch Checkpoint thất bại
+
+Khi cả 7 mô-đun đã xong, đợt chuyển sang `FINALIZING` và extension biên dịch Checkpoint tin cậy **ngay tại máy, không gọi model**. Nếu bước đó ném lỗi, `commitFailure()` ghi `finalization_error_code` nhưng **cố ý giữ nguyên trạng thái `FINALIZING`** — chính chú thích trong contract của bản gốc nói bước này "vẫn thử lại được, Checkpoint cũ vẫn còn hiệu lực".
+
+Vấn đề là chẳng có gì thử lại nó, và giao diện thì giấu mất cái nút duy nhất:
+
+```js
+// runtime bắt lỗi -> đăng snapshot "failed"
+shouldContinue = ["running", "finalizing", "recall_ready"].includes(status)
+// "failed" không nằm trong đó -> chuỗi chạy nền 1,5s dừng hẳn
+
+// panel: hộp lỗi hiện ra, nhưng nút thì
+manualRepair.hidden = findManualRepairModule(module_states, batch_status) === null
+// hàm đó chỉ trả về mô-đun khi batch_status là NEEDS_USER hoặc READY.
+// Ở đây batch_status = FINALIZING và cả 7 mô-đun đều COMMITTED -> null -> ẩn nút.
+```
+
+Kết quả đúng như ảnh người dùng gửi: hộp đỏ ghi `FINALIZER_CONTRACT_FAILED · Đã xong 7 mô-đun nhưng biên dịch tin cậy / kiểm chứng Checkpoint thất bại`, dòng "Mô-đun lỗi: **không rõ**" (vì `active_module_id` là null), và **không có nút nào để bấm**.
+
+Máy trạng thái vốn không hỏng — vào lại nó là biên dịch lại. Bản vá thôi giấu điều đó: nút luôn hiện khi hộp lỗi hiện, và khi không có mô-đun riêng lẻ nào sửa được thì nút tự đổi nhãn thành **"Thử lại bước đang kẹt (không tốn lần gọi)"** và chạy đúng `on_refresh()` — cùng hàm nằm sau nút "Làm mới trạng thái". Nhãn gốc được nút tự ghi nhớ ở lần vẽ đầu tiên nên bản dịch không bị chép lại lần hai trong mã vá.
+
+| | Khi 7 mô-đun xong nhưng biên dịch hỏng |
+|---|---|
+| chưa vá | hộp lỗi hiện, nút bị ẩn, chuỗi chạy nền dừng — chỉ thoát được bằng "Làm mới trạng thái" ở tab Tổng quan, nếu người dùng đoán ra |
+| đã vá | nút hiện ngay trong hộp lỗi, đổi nhãn, bấm là biên dịch lại |
+
+## Sửa lỗi: thông báo lỗi thật của bước biên dịch bị vứt đi
+
+`finalizationError()` ánh xạ 8 thông báo nó nhận ra thành mã riêng, rồi dồn **mọi thứ còn lại** vào `FINALIZER_CONTRACT_FAILED`. Cái mã gộp đó phủ ít nhất 6 lỗi hoàn toàn khác nhau — `M3 has no complete cold-readable partition`, `Novel Evidence … is missing from the current ledger`, `THREAD_IMPACT head is not an object`, `Checkpoint semantic record … is duplicated or misidentified`, … Chẩn đoán lại chỉ ghi đúng cái mã, nên nhật ký không phân biệt được, còn panel chỉ hiện một câu chung chung. Không ai chẩn được gì.
+
+Bản vá ghi kèm thông báo gốc vào mục `error_detail`. Toàn bộ nhóm thông báo này đều là cấu trúc — mã mô-đun, record ID, evidence ID, đều là hash — nên lời hứa `content_recorded: false` vẫn đúng. Ngoại lệ duy nhất là thông báo Core wire schema: nó nhúng báo cáo của bộ kiểm schema và có thể trích một giá trị trường ra, nên phần đuôi bị cắt (`event failed Core wire schema: <lược bỏ>`) thay vì ghi thẳng.
+
+Ba bản vá này được kiểm bằng cách **cắt đúng đoạn mã đã chèn ra khỏi `dist/index.js` rồi chạy nó**, không viết lại logic: 23 test phủ cả hai nhánh của nút, việc nhớ/khôi phục nhãn, trạng thái bận, lỗi TT im lặng, và việc lược bỏ nội dung nhạy cảm.
+
 ## Cấu trúc repo
 
 ```
@@ -136,7 +170,7 @@ dist/index.js        bundle đã Việt hóa (thứ SillyTavern thực sự nạ
 dist/index.js.map    sourcemap của bản gốc, kèm toàn bộ source TypeScript
 l10n/                các prompt bản tiếng Việt
 tools/localize.mjs   công cụ áp bản dịch + bản vá vào bundle
-tools/patches.mjs    các bản vá hành vi (sửa lỗi xoá chat, kéo chuột cuộn chip)
+tools/patches.mjs    các bản vá hành vi (xoá chat, kéo chuột cuộn chip, thử lại khi kẹt)
 tools/translations.mjs   bảng dịch
 docs/prompts-vi.md   bản dịch tham khảo của prompt trích xuất
 ```

@@ -660,6 +660,41 @@ body.narramem-modal-open {
   border-color: color-mix(in srgb, var(--narramem-warning) 36%, transparent);
 }
 
+.narramem-storage-list {
+  display: grid;
+  gap: 8px;
+}
+
+.narramem-storage-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--narramem-border-soft);
+}
+
+.narramem-storage-row:last-child {
+  border-bottom: 0;
+}
+
+.narramem-storage-row > div:first-child {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.narramem-storage-row strong,
+.narramem-storage-row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.narramem-storage-row small {
+  color: var(--narramem-muted);
+}
+
 .narramem-field {
   display: grid;
   min-width: 0;
@@ -987,6 +1022,10 @@ body.narramem-modal-open {
   .narramem-record-actions,
   .narramem-overview-actions,
   .narramem-backfill-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .narramem-storage-row {
     grid-template-columns: 1fr;
   }
 

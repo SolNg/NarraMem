@@ -482,7 +482,7 @@ export const TRANSLATIONS = {
   "发现未整理的旧聊天": "Phát hiện chat cũ chưa xử lý",
   "{0}/7 项完成": "Xong {0}/7 mục",
   "请先切换到其他聊天": "Hãy chuyển sang chat khác trước",
-  "完成后整理已覆盖内容": "Xong rồi mới thu gọn phần đã xử lý",
+  "完成后整理已覆盖内容": "Xong rồi mới dọn phần đã xử lý",
   "{0}未完成。{1}": "{0} chưa hoàn tất. {1}",
   "请先确认下方隐私提示": "Hãy xác nhận cảnh báo riêng tư bên dưới trước",
   "“{0}”的全部记忆": "Toàn bộ ký ức của “{0}”",

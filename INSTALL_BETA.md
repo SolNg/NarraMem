@@ -1,6 +1,6 @@
-# NarraMem 酒馆内测版安装说明
+# NarraMem 叙忆正式版安装说明
 
-版本：`0.4.0-beta.81`
+版本：`1.0.0`
 
 最低 SillyTavern：`1.18.0`
 
@@ -13,7 +13,7 @@
 3. Git URL 只填写 `https://github.com/sanmingyue/NarraMem-SillyTavern`。
 4. Branch or tag name 保持空白。
 5. 点击“Install just for me”。安装成功后刷新酒馆页面。
-6. 点击聊天输入框上方的“叙忆”按钮，或在扩展设置中打开“NarraMem 叙忆 0.4.0-beta.81”。记忆中心分为总览、记忆、当前任务、设置、日志与数据五页；手机上以底部面板显示。首次打开已有长聊天时，先核对待整理楼层和人工分批数量，再点击“开始整理旧聊天”；新聊天仍按自动 10＋4 运行。选择一个独立 API 配置：Custom 按酒馆自定义 Chat Completion 的习惯填写 URL 与 Key；DeepSeek 使用酒馆 1.18 原生 DeepSeek 适配，只填 Key。
+6. 点击聊天输入框上方的“叙忆”按钮，或在扩展设置中打开“NarraMem 叙忆 1.0.0”。记忆中心分为总览、记忆、当前任务、设置、日志与数据五页；手机上以底部面板显示。首次打开已有长聊天时，先核对待整理楼层和人工分批数量，再点击“开始整理旧聊天”；新聊天仍按自动 10＋4 运行。选择一个独立 API 配置：Custom 按酒馆自定义 Chat Completion 的习惯填写 URL 与 Key；DeepSeek 使用酒馆 1.18 原生 DeepSeek 适配，只填 Key。
 7. 首次使用只需填写地址和 Key，再点一次“连接并读取模型”：扩展会依次保存当前配置、保存独立 Key、检查 Key 状态并读取模型列表；已有已保存 Key 时输入框留空即可复用。选择模型后会自动保存；接口只返回一个模型时会自动选择并保存。整个连接过程不消耗生成调用。
 8. 默认按模型名自动匹配已验证的 NarraMem Prompt。无法识别时，页面会明确提示，并仅允许在“附加参数与高级设置”中手动选择兼容 Prompt。
 
@@ -30,7 +30,7 @@
 
 1. 打开 TT 的第三方扩展安装入口，Git URL 同样只填写 `https://github.com/sanmingyue/NarraMem-SillyTavern`，Branch／Tag 保持空白。
 2. 安装后刷新或重启 TT，进入一个角色聊天；看到输入区“叙忆”按钮后，按上面的同一套独立 Memory API 步骤配置即可。
-3. beta.72 会自动探测 TT 宿主，并通过 TT 官方分页历史 API 读取完整聊天；分页或聊天身份暂态不一致会有限本地重读，仍未同步时显示“等待 TT 同步”，用户可在记忆中心点击“刷新状态”重新读取。TT 历史中当前可见正文与选中 swipe 不一致时，只在 NarraMem 的只读缓存克隆内以前者为准，不修改用户聊天或其他 swipe。首个 Checkpoint 建立前不会预热或插入 Recall。它不再要求用户切换“全量加载”，也不会拿旧缓存或当前窗口片段继续抽取、Recall Source 判断或隐藏。
+3. 扩展会自动探测 TT 宿主，并通过 TT 官方分页历史 API 读取完整聊天；分页或聊天身份暂态不一致会有限本地重读，仍未同步时显示“等待 TT 同步”，用户可在记忆中心点击“刷新状态”重新读取。TT 历史中当前可见正文与选中 swipe 不一致时，只在 NarraMem 的只读缓存克隆内以前者为准，不修改用户聊天或其他 swipe。首个 Checkpoint 建立前不会预热或插入 Recall。它不再要求用户切换“全量加载”，也不会拿旧缓存或当前窗口片段继续抽取、Recall Source 判断或隐藏。
 
 NarraMem 是纯前端扩展，不需要也不包含 SillyTavern Node-only 后端插件。TT 与标准酒馆继续共用同一扩展包、Memory Core、世界书格式、Prompt 和更新分支；不会产生第二套 TT 专版数据。
 
@@ -88,7 +88,7 @@ NarraMem 使用酒馆世界书保存 Memory Set、Evidence、事件、状态、�
 
 两类导出都不包含 API 地址、API Key、secret ID、Prompt 正文或其他凭据值。导出文件只保存在用户点击下载的位置，不会由 NarraMem 自动上传。SillyTavern 本机服务自身可能按其日志级别记录 API 请求；共享酒馆日志前也应按可能含聊天隐私处理。
 
-## 内测反馈
+## 问题反馈
 
 反馈时请提供版本号、SillyTavern 版本、API 类型、复现步骤和“诊断日志”文件。只有在理解隐私风险并愿意提供剧情内容时，才发送“核心数据 + 日志”。不要在公开 Issue 中粘贴 API Key、`secrets.json`、Cookie 或完整聊天。
 

@@ -132,6 +132,38 @@ Chuỗi nhập vào được chuẩn hoá tất định: cắt khoảng trắng,
 
 Phần payload của bản vá được tách riêng thành hàm dựng mã trong `tools/patches.mjs` để **kiểm thử độc lập**: 30 test bao phủ tương thích ngược, danh sách nhiều thẻ, thứ tự chọn khối, `*`, và các ràng buộc mà `source-snapshot` kiểm tra ở downstream (`raw_end − raw_start ≥ độ dài text`).
 
+## Cải thiện: nút dò thẻ, và mặc định hai thẻ
+
+Bản gốc mặc định `narrative_content_tag` là `content`. Với các preset bọc chính văn trong `story_scene` — rất phổ biến — điều đó **im lặng cho ra rỗng**: phép chiếu fail-closed, mọi lượt AI đóng góp văn bản trắng, và ký ức rốt cuộc chỉ dựng từ lời của chính bạn. Không có cảnh báo nào.
+
+Vì bộ chuẩn hoá của bản này nhận danh sách nhiều thẻ, mặc định được đổi thành `content, story_scene`. Giá trị mặc định chỉ áp dụng cho máy cài mới; thiết lập đã lưu luôn thắng, nên không `content_fingerprint` nào dịch chuyển vì thay đổi này.
+
+Kèm theo là nút **"Dò thẻ trong chat này"** ngay dưới ô nhập. Nó quét các lượt AI của chat hiện tại, **xếp hạng thẻ theo lượng chữ mà khối hoàn chỉnh cuối cùng của nó thật sự bao phủ** — đúng quy tắc "khối hoàn chỉnh cuối cùng" mà runtime dùng — rồi báo cáo và điền thẻ thắng vào ô.
+
+Xếp theo độ bao phủ chứ không theo số lần xuất hiện là điểm mấu chốt. Trong một chat song ngữ thật, `<ja>` xuất hiện ở **đủ 12/12 lượt**, y hệt `story_scene`; nếu đếm tần suất thì hai bên hoà. Nhưng `story_scene` bao 230k ký tự còn `<ja>` chỉ 1k:
+
+```
+Tìm thấy: story_scene (12/12 lượt, ~230k ký tự) · thinking (12/12 lượt, ~96k ký tự)
+        · status (12/12 lượt, ~4k ký tự) · ja (12/12 lượt, ~1k ký tự)
+```
+
+### Vì sao không dò tự động
+
+Đây không phải ngại làm mà là tránh một lỗi tệ hơn:
+
+```
+narrative_content_tag → narrative_projection → content_fingerprint
+                                                      ↓
+                                    đổi = active_batch_mutation_rollback
+```
+
+Một bộ dò tự động mà đổi ý — thêm một lượt AI dùng thẻ khác, hay một lượt không bọc thẻ — sẽ trông y hệt như người dùng vừa sửa chat, và **xoá sạch đợt đang chạy**, âm thầm, không ai bấm gì. Đổi một lỗi nhìn thấy được lấy một lỗi không nhìn thấy được.
+
+Nên dò vẫn là hành động bạn chủ động bấm. Ô thiết lập vẫn là nguồn sự thật duy nhất, và fingerprint chỉ đổi khi bạn cố ý lưu.
+
+Bản vá được kiểm bằng cách **cắt đúng đoạn mã đã chèn ra khỏi `dist/index.js` rồi chạy nó trong jsdom**: 16 test phủ chat rỗng, preset `content`, preset song ngữ nhiều thẻ lồng nhau, preset không bọc thẻ (không ghi đè ô nhập, gợi ý dùng `*`), thẻ mở mà không đóng, tên thẻ có ký tự đặc biệt, và trường hợp `getContext` ném lỗi.
+
+
 ## Sửa lỗi: kẹt cứng khi biên dịch Checkpoint thất bại
 
 Khi cả 7 mô-đun đã xong, đợt chuyển sang `FINALIZING` và extension biên dịch Checkpoint tin cậy **ngay tại máy, không gọi model**. Nếu bước đó ném lỗi, `commitFailure()` ghi `finalization_error_code` nhưng **cố ý giữ nguyên trạng thái `FINALIZING`** — chính chú thích trong contract của bản gốc nói bước này "vẫn thử lại được, Checkpoint cũ vẫn còn hiệu lực".
@@ -173,7 +205,7 @@ dist/index.js        bundle đã Việt hóa (thứ SillyTavern thực sự nạ
 dist/index.js.map    sourcemap của bản gốc, kèm toàn bộ source TypeScript
 l10n/                các prompt bản tiếng Việt
 tools/localize.mjs   công cụ áp bản dịch + bản vá vào bundle
-tools/patches.mjs    các bản vá hành vi (kéo chuột cuộn chip, thẻ nội dung, thử lại khi kẹt)
+tools/patches.mjs    các bản vá hành vi (thẻ nội dung, dò thẻ, cuộn chip, thử lại khi kẹt)
 tools/translations.mjs   bảng dịch
 docs/prompts-vi.md   bản dịch tham khảo của prompt trích xuất
 ```

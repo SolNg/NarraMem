@@ -313,10 +313,11 @@ export const TRANSLATIONS = {
   "AI 正文标签": "Thẻ bọc nội dung AI",
   // Extended beyond the original: this fork accepts a tag list and the `*` entry.
   "默认 content。AI 只读取最后一个完整标签块，删除块内 HTML 注释并丢弃标签外内容；用户发言不受影响。":
-    "Mặc định là content. Chỉ khối thẻ hoàn chỉnh cuối cùng của AI được đọc, chú thích HTML bên trong bị xóa và nội dung ngoài thẻ bị bỏ; lời của bạn không bị ảnh hưởng. " +
+    "Mặc định là content, story_scene. Chỉ khối thẻ hoàn chỉnh cuối cùng của AI được đọc, chú thích HTML bên trong bị xóa và nội dung ngoài thẻ bị bỏ; lời của bạn không bị ảnh hưởng. " +
     "Preset dùng thẻ khác thì điền nhiều thẻ cách nhau bằng dấu phẩy, ví dụ: content, story_scene. " +
     "Thêm mục * để khi không khớp thẻ nào thì lấy toàn bộ tin nhắn — dành cho preset không bọc thẻ. " +
-    "Điền sai thẻ mà không có * thì lời của AI bị bỏ trắng và ký ức chỉ dựng từ lời bạn.",
+    "Điền sai thẻ mà không có * thì lời của AI bị bỏ trắng và ký ức chỉ dựng từ lời bạn. " +
+    "Không chắc preset dùng thẻ gì thì bấm “Dò thẻ trong chat này” ngay dưới đây.",
   "并发数": "Số luồng song song",
   "默认 1；只约束 NarraMem 后台任务。": "Mặc định 1; chỉ giới hạn tác vụ nền của NarraMem.",
   "传输失败自动重试次数": "Số lần tự thử lại khi lỗi truyền",

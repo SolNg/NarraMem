@@ -30,6 +30,9 @@ body.narramem-modal-open {
 .narramem-center-page[hidden],
 .narramem-information-box[hidden],
 .narramem-failure-box[hidden],
+.narramem-backfill-card[hidden],
+.narramem-module-progress-list[hidden],
+.narramem-pipeline[hidden],
 .narramem-field[hidden],
 .narramem-button[hidden] {
   display: none;
@@ -256,6 +259,7 @@ body.narramem-modal-open {
 .narramem-status-card,
 .narramem-information-box,
 .narramem-failure-box,
+.narramem-backfill-card,
 .narramem-record-card,
 .narramem-privacy-warning,
 .narramem-section {
@@ -270,6 +274,7 @@ body.narramem-modal-open {
 .narramem-status-card,
 .narramem-information-box,
 .narramem-failure-box,
+.narramem-backfill-card,
 .narramem-privacy-warning {
   padding: 14px 15px;
 }
@@ -369,6 +374,29 @@ body.narramem-modal-open {
 
 .narramem-module-progress-list {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.narramem-backfill-card {
+  display: grid;
+  gap: 10px;
+  border-color: color-mix(in srgb, var(--narramem-accent) 38%, var(--narramem-border-soft));
+}
+
+.narramem-backfill-card p {
+  margin: 0;
+  color: var(--narramem-muted);
+  line-height: 1.5;
+}
+
+.narramem-backfill-card > small {
+  color: var(--narramem-muted);
+}
+
+.narramem-backfill-controls {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.55fr) minmax(190px, 1fr);
+  align-items: end;
+  gap: 8px;
 }
 
 .narramem-module-progress {
@@ -630,6 +658,41 @@ body.narramem-modal-open {
 
 .narramem-section--privacy {
   border-color: color-mix(in srgb, var(--narramem-warning) 36%, transparent);
+}
+
+.narramem-storage-list {
+  display: grid;
+  gap: 8px;
+}
+
+.narramem-storage-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--narramem-border-soft);
+}
+
+.narramem-storage-row:last-child {
+  border-bottom: 0;
+}
+
+.narramem-storage-row > div:first-child {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.narramem-storage-row strong,
+.narramem-storage-row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.narramem-storage-row small {
+  color: var(--narramem-muted);
 }
 
 .narramem-field {
@@ -957,7 +1020,12 @@ body.narramem-modal-open {
 
   .narramem-two-actions,
   .narramem-record-actions,
-  .narramem-overview-actions {
+  .narramem-overview-actions,
+  .narramem-backfill-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .narramem-storage-row {
     grid-template-columns: 1fr;
   }
 

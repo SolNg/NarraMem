@@ -53,12 +53,16 @@ export const FILE_OVERRIDES = [
  */
 export const KEEP_PREFIXES = [
   "你只执行 NarraMem 模块", // M1-M7 task prompts
-  "只返回一个 M", // M1-M7 output contracts
   "你正在执行 NarraMem 当前", // NM-P0034 repair system
-  "现在只返回当前 module_id", // NM-P0035 repair contract
   "本条 System 是 NarraMem", // NM-P0032 material envelope
-  "上一份 JSON 输出在传输中途截断", // NM-P0033 continuation
   "NarraMem 叙忆 - ", // SillyTavern secret label
+  // 1.0.0 replaced the JSON output contracts with a pipe-delimited tagged-text
+  // format. The old "只返回一个 M" / "现在只返回当前 module_id" / JSON continuation
+  // prompts are gone; these are their replacements.
+  "只输出 M", // M1-M7 tagged-output contracts
+  "你正在修复 NarraMem 当前", // tagged repair contract
+  "前一条 Assistant 内容在一个固定标签记录中途截断", // tagged continuation
+  "现在只返回当前 module_id", // tagged repair output contract
 ];
 
 /**
@@ -85,13 +89,6 @@ export const TRANSLATIONS = {
   "可用模型": "Model khả dụng",
 
   // --- Pipeline stage notes -------------------------------------------------
-  "独立 Memory API 返回模块正文": "Memory API riêng trả về nội dung mô-đun",
-  "只解析当前小模块的结构": "Chỉ phân tích cấu trúc của mô-đun con hiện tại",
-  "证据、依赖与字段逐条准入": "Duyệt từng bằng chứng, phụ thuộc và trường dữ liệu",
-  "可信记录编译为叙事状态": "Biên dịch bản ghi tin cậy thành trạng thái truyện",
-  "提交到当前聊天的单一记忆书": "Ghi vào world book ký ức duy nhất của chat hiện tại",
-  "从当前剧情状态构造可解释召回": "Dựng Recall giải thích được từ trạng thái truyện hiện tại",
-  "校验后才隐藏已覆盖旧楼层": "Chỉ ẩn lượt cũ sau khi đã kiểm chứng",
 
   // --- Module names (M1-M7) -------------------------------------------------
   "人物与实体": "Nhân vật & Thực thể",
@@ -116,13 +113,9 @@ export const TRANSLATIONS = {
   // --- Runtime status labels ------------------------------------------------
   "自动记忆：关闭": "Ký ức tự động: Tắt",
   "无聊天": "Chưa có chat",
-  "收集中": "Đang thu thập",
   "需处理": "Cần xử lý",
-  "编译中": "Đang biên dịch",
-  "召回就绪": "Recall sẵn sàng",
   "已完成": "Hoàn tất",
   "等待批次": "Chờ đợt mới",
-  "本地收尾": "Hoàn tất cục bộ",
   "尚无": "Chưa có",
   "已建立": "Đã tạo",
 
@@ -175,19 +168,13 @@ export const TRANSLATIONS = {
   "未来影响候选": "Ứng viên ảnh hưởng tương lai",
 
   // --- Overview panel -------------------------------------------------------
-  "NarraMem 叙忆（内测 {0}）": "NarraMem (beta {0})",
   "当前聊天的叙事经历、因果与长期影响":
     "Trải nghiệm, nhân quả và ảnh hưởng dài hạn của chat hiện tại",
   "关闭记忆中心": "Đóng Trung tâm ký ức",
   "待处理 AI 楼层": "Lượt AI chờ xử lý",
-  "正文保护窗口": "Cửa sổ bảo vệ",
-  "最近检查点": "Checkpoint gần nhất",
   "查看全部记忆": "Xem toàn bộ ký ức",
   "查看当前任务": "Xem tác vụ hiện tại",
-  "重新处理失败模块（消耗 1 次调用）": "Xử lý lại mô-đun lỗi (tốn 1 lượt gọi)",
   "打开日志与数据": "Mở Nhật ký & Dữ liệu",
-  "NarraMem 每累计 14 个有效 AI 楼层，冻结前 10 个并依次完成 7 个小模块；全部通过可信编译、Recall 校验后才隐藏旧楼层。任何失败都不会隐藏聊天，最新 4 个 AI 楼层始终保留用于自然衔接。":
-    "Cứ mỗi 14 lượt AI hợp lệ, NarraMem đóng băng 10 lượt đầu rồi chạy lần lượt 7 mô-đun con; chỉ khi qua hết biên dịch tin cậy và kiểm chứng Recall thì lượt cũ mới bị ẩn. Mọi thất bại đều không làm ẩn chat, và 4 lượt AI mới nhất luôn được giữ lại để mạch truyện liền lạc.",
 
   // --- Runtime headlines ----------------------------------------------------
   "自动记忆未启用": "Ký ức tự động chưa bật",
@@ -207,42 +194,21 @@ export const TRANSLATIONS = {
     "Đã gom {0}/{1} lượt AI mới xử lý được; đủ {2} sẽ tự cập nhật ký ức sẵn có và vẫn giữ lại {3} lượt AI mới nhất.",
   "已积累 {0}/{1}": "Đã gom {0}/{1}",
   "本次已积累 AI 楼层": "Lượt AI đã gom đợt này",
-  "正在等待 TauriTavern 同步完整聊天":
-    "Đang chờ TauriTavern đồng bộ toàn bộ chat",
-  "当前不会调用 Memory API、抽取新记忆或隐藏楼层。可点击“刷新状态”重新读取完整聊天。":
-    "Hiện không gọi Memory API, không trích xuất ký ức mới và không ẩn lượt nào. Bấm “Làm mới trạng thái” để đọc lại toàn bộ chat.",
   "正在等待 TauriTavern 完整聊天同步；不会调用模型或隐藏楼层":
     "Đang chờ TauriTavern đồng bộ toàn bộ chat; không gọi model và không ẩn lượt nào",
-  "等待 TT 同步": "Chờ TT đồng bộ",
   "刷新状态": "Làm mới trạng thái",
   "刷新失败：{0}": "Làm mới thất bại: {0}",
   "正在连接": "Đang kết nối",
   "正在积累": "Đang gom",
-  "已完成记忆模块": "Mô-đun ký ức đã xong",
 
   // beta.67 split "no chat at all" from "chat open, runtime still resolving".
   "请先打开一张角色卡及其聊天记录。": "Hãy mở một thẻ nhân vật và lịch sử chat của nó trước.",
   "正在连接当前聊天": "Đang kết nối chat hiện tại",
-  "正在读取聊天、世界书与已有记忆；完成后会自动更新，不会重复调用模型。":
-    "Đang đọc chat, world book và ký ức sẵn có; xong sẽ tự cập nhật, không gọi lại model.",
-  "加载中": "Đang tải",
-  "本批有模块需要手动处理": "Đợt này có mô-đun cần xử lý thủ công",
-  "后台记忆任务失败，聊天不会受阻": "Tác vụ ký ức nền thất bại, chat vẫn dùng bình thường",
   "后台正在整理记忆": "Đang tổng hợp ký ức ở nền",
   "最新记忆批次已完成": "Đợt ký ức mới nhất đã xong",
   "正在等待下一批剧情": "Đang chờ diễn biến tiếp theo",
   "当前批 AI 楼层 {0}–{1}；最新 4 个 AI 楼层始终保留在聊天正文中。":
     "Đợt hiện tại gồm lượt AI {0}–{1}; 4 lượt AI mới nhất luôn được giữ hiện trong chat.",
-  "首次收集 {0}/14 个 AI 楼层；到 14 时处理前 10 个，保留最新 4 个。":
-    "Đang thu thập lần đầu {0}/14 lượt AI; đủ 14 sẽ xử lý 10 lượt đầu và giữ lại 4 lượt mới nhất.",
-  "下一批已积累 {0}/10 个可处理 AI 楼层；另有最新 4 个 AI 楼层受保护。":
-    "Đợt kế đã gom {0}/10 lượt AI xử lý được; ngoài ra 4 lượt AI mới nhất được bảo vệ.",
-  "{0}/7 模块完成": "{0}/7 mô-đun hoàn tất",
-  "{0} · 调用 {1}": "{0} · {1} lượt gọi",
-  "失败模块：{0} · {1}{2}": "Mô-đun lỗi: {0} · {1}{2}",
-  "需要手动处理": "cần xử lý thủ công",
-  "未知": "không rõ",
-  "当前没有正在处理的记忆批次": "Hiện không có đợt ký ức nào đang xử lý",
 
   // --- Memory list ----------------------------------------------------------
   "最新记忆在前；点击卡片展开整理内容与来源楼层。":
@@ -259,8 +225,6 @@ export const TRANSLATIONS = {
   "从此楼层重新处理": "Xử lý lại từ lượt này",
   "会回退并重建此楼层之后的依赖记忆，避免新旧结果冲突":
     "Sẽ hoàn tác và dựng lại các ký ức phụ thuộc sau lượt này để tránh xung đột cũ/mới",
-  "从楼层 {0} 重新处理？此楼层之后依赖它的记忆会同步回退并重建。":
-    "Xử lý lại từ lượt {0}? Các ký ức phụ thuộc sau lượt này sẽ được hoàn tác và dựng lại.",
   "重新处理失败：{0}": "Xử lý lại thất bại: {0}",
   "读取记忆失败：{0}": "Đọc ký ức thất bại: {0}",
   // beta.75 renamed 手动修复 -> 手动处理 and replaced the hard "no module is
@@ -271,10 +235,6 @@ export const TRANSLATIONS = {
 
   // --- Settings: automation -------------------------------------------------
   "启用 NarraMem 自动记忆": "Bật ký ức tự động NarraMem",
-  "只控制后台记忆任务，不改变酒馆正常聊天请求":
-    "Chỉ điều khiển tác vụ ký ức nền, không đụng tới yêu cầu chat thường của SillyTavern",
-  "Memory API 完全独立：不会调用当前聊天 API、模型、预设或角色卡生成链。配置保存在当前酒馆用户空间，Key 只进入酒馆 secrets.json，扩展不会读取或回显原值。":
-    "Memory API hoàn toàn độc lập: không gọi tới API, model, preset hay chuỗi sinh nội dung của chat hiện tại. Cấu hình lưu trong không gian người dùng SillyTavern, Key chỉ nằm trong secrets.json của SillyTavern, extension không đọc hay hiển thị lại giá trị gốc.",
 
   // --- Settings: API profiles ----------------------------------------------
   "新建": "Tạo mới",
@@ -290,10 +250,6 @@ export const TRANSLATIONS = {
   "服务器 URL": "URL máy chủ",
   "与酒馆 Custom Chat Completion 一致：可填根地址、/v1 或完整 /chat/completions。":
     "Giống Custom Chat Completion của SillyTavern: điền địa chỉ gốc, /v1 hoặc /chat/completions đầy đủ đều được.",
-  "使用酒馆 DeepSeek 原生接口与密钥槽；固定端点 {0}。":
-    "Dùng API và ô Key DeepSeek gốc của SillyTavern; endpoint cố định {0}.",
-  "首次使用只需填写地址与 Key，再点击“连接并读取模型”；已有已保存 Key 时可留空复用":
-    "Lần đầu chỉ cần điền địa chỉ và Key rồi bấm “Kết nối và tải danh sách model”; nếu đã lưu Key thì để trống để dùng lại",
   "当前配置已有独立 Key，不能直接切换接口来源；请新建配置，或先删除当前配置的 Key。":
     "Cấu hình hiện tại đã có Key riêng nên không đổi nguồn API trực tiếp được; hãy tạo cấu hình mới, hoặc xóa Key của cấu hình này trước.",
 
@@ -321,8 +277,6 @@ export const TRANSLATIONS = {
   "本地密钥保存失败：{0}": "Lưu Key cục bộ thất bại: {0}",
 
   // --- Settings: model ------------------------------------------------------
-  "读取模型列表不会触发生成；选中模型后自动保存":
-    "Tải danh sách model không kích hoạt sinh nội dung; chọn xong sẽ tự lưu",
   "输入模型名": "Nhập tên model",
   "模型 ID": "Model ID",
   "接口不提供模型列表时可直接填写模型 ID。":
@@ -354,14 +308,8 @@ export const TRANSLATIONS = {
   "连接状态读取失败：{0}": "Đọc trạng thái kết nối thất bại: {0}",
 
   // --- Settings: advanced ---------------------------------------------------
-  "自动续接被截断的模块输出（额外消耗调用）":
-    "Tự nối tiếp phần đầu ra bị cắt (tốn thêm lượt gọi)",
-  "模块结构错误时自动专项修复 1 次（额外消耗调用）":
-    "Tự sửa chuyên biệt 1 lần khi mô-đun sai cấu trúc (tốn thêm lượt gọi)",
   "资料确认使用 Assistant 预填充；关闭后改为 System":
     "Xác nhận tư liệu dùng Assistant prefill; tắt thì chuyển sang System",
-  "任务恢复、正文清洗与 Prompt 设置":
-    "Khôi phục tác vụ, làm sạch nội dung và cài đặt Prompt",
   "AI 正文标签": "Thẻ bọc nội dung AI",
   // Extended beyond the original: this fork accepts a tag list and the `*` entry.
   "默认 content。AI 只读取最后一个完整标签块，删除块内 HTML 注释并丢弃标签外内容；用户发言不受影响。":
@@ -372,8 +320,6 @@ export const TRANSLATIONS = {
   "并发数": "Số luồng song song",
   "默认 1；只约束 NarraMem 后台任务。": "Mặc định 1; chỉ giới hạn tác vụ nền của NarraMem.",
   "传输失败自动重试次数": "Số lần tự thử lại khi lỗi truyền",
-  "默认 1；每个模块首次失败后最多再请求此次数。":
-    "Mặc định 1; mỗi mô-đun sau lần lỗi đầu sẽ thử lại tối đa số lần này.",
   "自动续接次数上限": "Giới hạn số lần nối tiếp tự động",
   "默认 1；只有输出中途截断时使用。": "Mặc định 1; chỉ dùng khi đầu ra bị cắt giữa chừng.",
   "请求超时（毫秒）": "Thời gian chờ yêu cầu (ms)",
@@ -383,18 +329,10 @@ export const TRANSLATIONS = {
   "通用模块化 Prompt": "Prompt mô-đun hóa dùng chung",
   // Present in upstream source but tree-shaken out of the shipped bundle;
   // kept so the string is already covered if a later build reaches that path.
-  "当前模型无法自动匹配 NarraMem Prompt，请在高级设置选择兼容 Prompt":
-    "Model hiện tại không tự khớp được Prompt của NarraMem, hãy chọn Prompt tương thích trong cài đặt nâng cao",
-  "不会发送最大上下文、最大回复、温度、Top P 或会话上限；均使用所选模型／服务端默认值。手动修复每点击一次只调用一次，没有总次数上限。":
-    "Không gửi context tối đa, độ dài phản hồi tối đa, temperature, Top P hay giới hạn phiên; tất cả dùng mặc định của model / máy chủ. Mỗi lần bấm sửa thủ công chỉ gọi đúng một lần, không có giới hạn tổng.",
 
   // --- Data export ----------------------------------------------------------
-  "用于定位扩展、宿主、解析与持久化问题；不包含 API 配置和 Prompt 正文":
-    "Dùng để tìm lỗi extension, host, phân tích và lưu trữ; không chứa cấu hình API hay nội dung Prompt",
   "用于复现长期记忆结果，可能包含当前聊天的敏感内容":
     "Dùng để tái hiện kết quả ký ức dài hạn, có thể chứa nội dung nhạy cảm của chat hiện tại",
-  "隐私警告：核心数据可能包含聊天原文、角色资料、世界状态、因果证据和会话标识。导出不包含 API URL、API Key、secret ID 或 Prompt 正文。请只发送给你信任的人。":
-    "Cảnh báo riêng tư: dữ liệu lõi có thể chứa nguyên văn chat, thông tin nhân vật, trạng thái thế giới, bằng chứng nhân quả và định danh phiên. Bản xuất không chứa API URL, API Key, secret ID hay nội dung Prompt. Chỉ gửi cho người bạn thực sự tin tưởng.",
   "我理解核心数据可能包含聊天记录等隐私内容":
     "Tôi hiểu dữ liệu lõi có thể chứa lịch sử chat và nội dung riêng tư",
   "下载诊断日志": "Tải nhật ký chẩn đoán",
@@ -407,7 +345,6 @@ export const TRANSLATIONS = {
   '<i class="fa-solid fa-brain" aria-hidden="true"></i><span>叙忆</span>':
     '<i class="fa-solid fa-brain" aria-hidden="true"></i><span>NarraMem</span>',
   "打开 NarraMem 叙忆": "Mở NarraMem",
-  "打开 NarraMem 叙忆（内测 {0}）": "Mở NarraMem (beta {0})",
   "打开 NarraMem 记忆中心": "Mở Trung tâm ký ức NarraMem",
 
   // --- API error surfaces ---------------------------------------------------
@@ -494,4 +431,126 @@ export const TRANSLATIONS = {
   "TauriTavern 聊天历史页不连续": "Trang lịch sử chat của TauriTavern không liền mạch",
   "TauriTavern 聊天在读取期间发生变化或返回数量不一致":
     "Chat của TauriTavern thay đổi trong lúc đọc hoặc trả về số lượng không khớp",
+
+  // --- 1.0.0: manual backfill of existing chats, tagged output, storage manager
+  "导出": "Xuất",
+  "保存中": "Đang lưu",
+  "已保存": "Đã lưu",
+  "获取结果": "Nhận kết quả",
+  "读取结果": "Đọc kết quả",
+  "核对内容": "Đối chiếu nội dung",
+  "整理记忆": "Tổng hợp ký ức",
+  "保存记忆": "Lưu ký ức",
+  "准备回忆": "Chuẩn bị Recall",
+  "等待聊天": "Đợi chat",
+  "最近记忆": "Ký ức gần đây",
+  "高级设置": "Cài đặt nâng cao",
+  "聊天记忆": "Ký ức của chat",
+  "刷新列表": "Làm mới danh sách",
+  "正在读取": "Đang đọc",
+  "即将完成": "Sắp xong",
+  "暂停整理": "Tạm dừng xử lý",
+  "继续整理": "Tiếp tục xử lý",
+  "本次整理": "Lần xử lý này",
+  "当前聊天": "Chat hiện tại",
+  "收起旧楼层": "Thu gọn lượt cũ",
+  "正在读取…": "Đang đọc…",
+  "整理当前部分": "Xử lý phần hiện tại",
+  "确认回复完整": "Xác nhận phản hồi đầy đủ",
+  "保留最新回复": "Giữ lại phản hồi mới nhất",
+  "等待完成删除": "Đợi xoá xong",
+  "检查来源与关系": "Kiểm tra nguồn và quan hệ",
+  "保存到当前聊天": "Lưu vào chat hiện tại",
+  "正在整理旧聊天": "Đang xử lý chat cũ",
+  "开始整理旧聊天": "Bắt đầu xử lý chat cũ",
+  "已完成记忆项目": "Mục ký ức đã hoàn thành",
+  "这份记忆不存在": "Ký ức này không tồn tại",
+  "当前批次尚未结束": "Đợt hiện tại chưa kết thúc",
+  "生成可使用的记录": "Tạo bản ghi dùng được",
+  "等待当前回复完成": "Đợi phản hồi hiện tại xong",
+  "正在读取完整聊天": "Đang đọc toàn bộ chat",
+  "旧聊天整理已暂停": "Đã tạm dừng xử lý chat cũ",
+  "每批 AI 楼层": "Lượt AI mỗi đợt",
+  "旧聊天待整理楼层": "Lượt chat cũ chờ xử lý",
+  "未找到对应世界书": "Không tìm thấy world book tương ứng",
+  "导出失败：{0}": "Xuất thất bại: {0}",
+  "读取失败：{0}": "Đọc thất bại: {0}",
+  "暂停失败：{0}": "Tạm dừng thất bại: {0}",
+  "本批有一项需要处理": "Đợt này có một mục cần xử lý",
+  "发现可整理的旧聊天": "Phát hiện chat cũ có thể xử lý",
+  "旧聊天正在排队整理": "Chat cũ đang xếp hàng chờ xử lý",
+  "发现未整理的旧聊天": "Phát hiện chat cũ chưa xử lý",
+  "{0}/7 项完成": "Xong {0}/7 mục",
+  "请先切换到其他聊天": "Hãy chuyển sang chat khác trước",
+  "完成后整理已覆盖内容": "Xong rồi mới thu gọn phần đã xử lý",
+  "{0}未完成。{1}": "{0} chưa hoàn tất. {1}",
+  "请先确认下方隐私提示": "Hãy xác nhận cảnh báo riêng tư bên dưới trước",
+  "“{0}”的全部记忆": "Toàn bộ ký ức của “{0}”",
+  "继续整理失败：{0}": "Tiếp tục xử lý thất bại: {0}",
+  "无法开始整理：{0}": "Không bắt đầu xử lý được: {0}",
+  "无法唯一确认这份记忆": "Không xác định được duy nhất ký ức này",
+  "选择后续剧情需要的记忆": "Chọn ký ức cần cho mạch truyện tiếp theo",
+  "选择用于整理记忆的模型": "Chọn model dùng để tổng hợp ký ức",
+  "还没有已保存的聊天记忆": "Chưa có ký ức chat nào được lưu",
+  "旧聊天整理状态缺少持久头": "Trạng thái xử lý chat cũ thiếu head lưu trữ",
+  "每批整理的 AI 楼层数": "Số lượt AI mỗi đợt xử lý",
+  "这份记忆在世界书中不存在": "Ký ức này không có trong world book",
+  "NarraMem 尚未启用": "NarraMem chưa được bật",
+  "当前旧聊天整理任务没有暂停": "Tác vụ xử lý chat cũ hiện không ở trạng thái tạm dừng",
+  "开启后会在聊天间隙整理记忆": "Bật thì sẽ tổng hợp ký ức vào lúc chat rảnh",
+  "当前旧聊天整理任务不在运行中": "Tác vụ xử lý chat cũ hiện không chạy",
+  "本次整理未完成，聊天不受影响": "Lần xử lý này chưa xong, chat không bị ảnh hưởng",
+  "正在读取当前聊天和已有记忆。": "Đang đọc chat hiện tại và ký ức đã có.",
+  "NarraMem 扩展已停止": "Extension NarraMem đã dừng",
+  "当前没有可控制的旧聊天整理任务": "Hiện không có tác vụ xử lý chat cũ nào để điều khiển",
+  "NarraMem 叙忆 {0}": "NarraMem {0}",
+  "未填写的生成参数使用模型默认值。": "Tham số sinh nào bỏ trống sẽ dùng mặc định của model.",
+  "查看、导出或删除各聊天保存的记忆": "Xem, xuất hoặc xoá ký ức đã lưu của từng chat",
+  "重新处理这一项（调用 1 次模型）": "Xử lý lại mục này (gọi model 1 lần)",
+  "使用 DeepSeek 官方接口。": "Dùng API chính thức của DeepSeek.",
+  "{0} · 已调用模型 {1} 次": "{0} · đã gọi model {1} lần",
+  "本次整理未完成，可以在此重新处理。": "Lần xử lý này chưa xong, có thể xử lý lại ở đây.",
+  "请先切换到其他聊天，再删除这份记忆": "Hãy chuyển sang chat khác rồi mới xoá ký ức này",
+  "当前聊天没有等待开始的旧聊天整理任务": "Chat hiện tại không có tác vụ xử lý chat cũ nào đang chờ bắt đầu",
+  "用于排查问题，不包含 API Key": "Dùng để tìm lỗi, không chứa API Key",
+  "可以重新处理，或下载诊断日志后反馈。": "Có thể xử lý lại, hoặc tải nhật ký chẩn đoán rồi báo lỗi.",
+  "打开 NarraMem 叙忆 {0}": "Mở NarraMem {0}",
+  "当前聊天的稳定身份与旧记忆登记发生冲突": "Danh tính ổn định của chat hiện tại xung đột với đăng ký ký ức cũ",
+  "自动续接被截断的单项结果（额外消耗调用）": "Tự nối tiếp kết quả từng mục bị cắt (tốn thêm lượt gọi)",
+  "TauriTavern 稳定聊天身份为空": "Danh tính chat ổn định của TauriTavern rỗng",
+  "每批楼层数必须是 1 到 50 之间的整数": "Số lượt mỗi đợt phải là số nguyên từ 1 đến 50",
+  "默认 1；每项首次失败后最多再请求此次数。": "Mặc định 1; mỗi mục sau lần lỗi đầu sẽ thử lại tối đa số lần này.",
+  "每批楼层数请填写 1 到 50 之间的整数。": "Số lượt mỗi đợt hãy điền số nguyên từ 1 đến 50.",
+  "TauriTavern 稳定聊天身份读取失败": "Không đọc được danh tính chat ổn định của TauriTavern",
+  "单项结果格式错误时自动修复 1 次（额外消耗调用）":
+    "Tự sửa 1 lần khi kết quả một mục sai định dạng (tốn thêm lượt gọi)",
+  "每批 {0} 个；失败时会停下，失败范围不会收起。":
+    "Mỗi đợt {0} lượt; hỏng thì dừng lại, phần hỏng sẽ không bị thu gọn.",
+  "当前不会发起新的记忆调用；聊天回复结束后会自动继续。": "Hiện không gọi ký ức mới; chat trả lời xong sẽ tự tiếp tục.",
+  "确定删除{0}？聊天记录不会被删除，此操作无法撤销。":
+    "Chắc chắn xoá {0}? Lịch sử chat không bị xoá, thao tác này không hoàn tác được.",
+  "当前不会开始整理或收起楼层。可以点击“刷新状态”重试。":
+    "Hiện không bắt đầu xử lý hay thu gọn lượt nào. Có thể bấm “Làm mới trạng thái” để thử lại.",
+  "当前不会发起新的记忆调用；继续后从已保存进度接着整理。":
+    "Hiện không gọi ký ức mới; tiếp tục thì chạy tiếp từ tiến độ đã lưu.",
+  "旧聊天已加入队列，已整理 {0}/{1} 个 AI 楼层。": "Chat cũ đã vào hàng đợi, đã xử lý {0}/{1} lượt AI.",
+  "完成后会收起已整理楼层，最新 4 个 AI 回复始终保留。":
+    "Xong sẽ thu gọn các lượt đã xử lý, 4 phản hồi AI mới nhất luôn được giữ lại.",
+  "填写地址与 Key 后连接；已有已保存 Key 时可以留空":
+    "Điền địa chỉ và Key rồi kết nối; đã có Key lưu sẵn thì để trống được",
+  "已整理 {0}/{1} 个 AI 楼层，剩余 {2} 个。": "Đã xử lý {0}/{1} lượt AI, còn lại {2} lượt.",
+  "从楼层 {0} 重新处理？此楼层之后依赖它的记忆会一并回退并重建。":
+    "Xử lý lại từ lượt {0}? Các ký ức phụ thuộc sau lượt này sẽ được hoàn tác và dựng lại.",
+  "已整理 {0}/{1} 个 AI 楼层；点击继续后从当前进度接着整理。":
+    "Đã xử lý {0}/{1} lượt AI; bấm tiếp tục sẽ chạy tiếp từ tiến độ hiện tại.",
+  "已识别 {0} 个有效 AI 楼层，其中 {1} 个尚未整理。确认后才会开始。":
+    "Đã nhận ra {0} lượt AI hợp lệ, trong đó {1} lượt chưa xử lý. Xác nhận thì mới bắt đầu.",
+  "记忆接口独立于聊天接口。连接信息保存在当前酒馆账户，已保存的 Key 不会显示。":
+    "API ký ức độc lập với API chat. Thông tin kết nối lưu trong tài khoản SillyTavern hiện tại, Key đã lưu sẽ không hiện ra.",
+  "预计 {0} 批；正常每批调用 7 次模型。过大更容易失败，过小会增加调用次数。":
+    "Ước tính {0} đợt; bình thường mỗi đợt gọi model 7 lần. Đặt quá lớn thì dễ hỏng, quá nhỏ thì tốn thêm lượt gọi.",
+  "开始整理剩余 {0} 个 AI 楼层？预计 {1} 批，正常每批调用 7 次模型。失败时会停下，失败范围不会收起。":
+    "Bắt đầu xử lý {0} lượt AI còn lại? Ước tính {1} đợt, bình thường mỗi đợt gọi model 7 lần. Hỏng thì dừng lại, phần hỏng sẽ không bị thu gọn.",
+  "隐私警告：核心数据可能包含聊天原文、角色资料、世界状态、因果证据和会话标识。导出不包含接口地址或 API Key。请只发送给你信任的人。":
+    "Cảnh báo riêng tư: dữ liệu lõi có thể chứa nguyên văn chat, thông tin nhân vật, trạng thái thế giới, bằng chứng nhân quả và mã định danh phiên. Bản xuất không chứa địa chỉ API hay API Key. Chỉ gửi cho người bạn tin tưởng.",
 };

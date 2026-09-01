@@ -11,68 +11,6 @@
  */
 
 /**
- * Chat deletion never removes the Memory Book (upstream 0.4.0-beta.60).
- *
- * `INSTALL_BETA.md` states that deleting a chat deletes its NarraMem Memory Set
- * worldbook, but the CHAT_DELETED handler calls `TavernMemoryRegistry` — the v1
- * lifecycle registry. That class reads `NarraMem__REGISTRY__v1` and only deletes
- * books named `NarraMem__CONTROL__*`, `NarraMem__ARCHIVE__*` and five other v1
- * prefixes. The modular runtime writes `NarraMem__MEMORY__<id>` and registers it
- * in `NarraMem__REGISTRY__v2`, neither of which that code path knows about, so
- * it returns NOT_FOUND and deletes nothing.
- *
- * The correct v2 routine exists — `TavernMemoryRegistryStore.deleteChat()`, which
- * deletes `memory_book_name` — but its only caller is `resumePendingDeletions()`,
- * which processes records already marked DELETE_PENDING, a status only
- * `deleteChat()` itself sets. Nothing can enter that loop, so it is dead code.
- *
- * This patch runs the v2 routine first and keeps the v1 sweep afterwards for
- * installs carrying legacy books. Each call is isolated so one failure cannot
- * suppress the other, and the diagnostic reports both outcomes.
- */
-const chatDeleteCleanup = {
-  name: "chat-delete-cleanup",
-
-  /** Sentinel proving this patch is already in the bundle. */
-  applied: "__nmV2",
-
-  // Group 1: the whole `let chatId=…,charId=…;` preamble, re-emitted verbatim.
-  // 2: chat id  3: character id  4: host port  5: v1 registry
-  // 6: v1 result  7: recordDiagnostic  8: logError
-  find: new RegExp(
-    String.raw`(let ([\w$]+)=[\w$]+\.replace\(\/\\\.jsonl\$\/iu,""\),([\w$]+)=([\w$]+)\.getCurrentIdentity\(\)\.character_id;)` +
-      String.raw`([\w$]+)\.deleteMemorySetForChat\(\{chat_id:\2,\.\.\.\3===null\?\{\}:\{character_id:\3\}\}\)` +
-      String.raw`\.then\(([\w$]+)=>([\w$]+)\("deleted_chat_memory_cleanup",\{status:\6\.status,` +
-      String.raw`deleted_worldbook_count:\6\.deleted_worldbook_names\.length,content_recorded:!1\}\),([\w$]+)\)`,
-    "u",
-  ),
-
-  /** The v2 registry store: the only class exposing this trio of methods. */
-  requires: { store: ["deleteChat", "resumePendingDeletions", "upsert"] },
-
-  replace(match, { store }) {
-    const [, preamble, chatId, charId, port, legacy, , record, logError] = match;
-    // Deliberately verbose local names: the bundle's own identifiers are one or
-    // two characters, so short names here risk shadowing a captured one.
-    return (
-      `${preamble}(async()=>{let __nmV2=null,__nmV1=null,__nmE2=null,__nmE1=null;` +
-      `try{__nmV2=await new ${store}(${port}).deleteChat({host_user_id:"current_sillytavern_user",` +
-      `chat_id:${chatId},...${charId}===null?{}:{character_or_group_id:${charId}}})}catch(__nmX){__nmE2=__nmX}` +
-      `try{__nmV1=await ${legacy}.deleteMemorySetForChat({chat_id:${chatId},` +
-      `...${charId}===null?{}:{character_id:${charId}}})}catch(__nmX){__nmE1=__nmX}` +
-      `${record}("deleted_chat_memory_cleanup",{` +
-      `status:__nmV2===null?"FAILED":__nmV2.status,` +
-      `legacy_status:__nmV1===null?"FAILED":__nmV1.status,` +
-      `memory_book_removed:__nmV2!==null&&__nmV2.removed!==null,` +
-      `deleted_worldbook_count:(__nmV2!==null&&__nmV2.removed!==null?1:0)+` +
-      `(__nmV1===null?0:__nmV1.deleted_worldbook_names.length),` +
-      `content_recorded:!1});` +
-      `if(__nmE2!==null)${logError}(__nmE2);if(__nmE1!==null)${logError}(__nmE1)})()`
-    );
-  },
-};
-
-/**
  * Drag-to-scroll for the module filter strip.
  *
  * `.narramem-module-tabs` scrolls horizontally but sets `scrollbar-width: none`,
@@ -287,7 +225,7 @@ const finalizerRetryButton = {
   name: "finalizer-retry-button",
   applied: "nmStuckLabel",
   // 1: the repair button  2: the repairable module  3: the busy flag
-  find: /,([\w$]+)\.hidden=([\w$]+)===null,\1\.disabled=([\w$]+)\),/u,
+  find: /,([\w$]+)\.hidden=([\w$]+)===null,\1\.disabled=([\w$]+)\}/u,
   replace(match) {
     const [, repairButton, repairModule, busy] = match;
     return (
@@ -295,7 +233,7 @@ const finalizerRetryButton = {
       `${repairButton}.textContent=${repairModule}===null` +
       `?"Thử lại bước đang kẹt (không tốn lần gọi)"` +
       `:${repairButton}.dataset.nmStuckLabel,` +
-      `${repairButton}.hidden=!1,${repairButton}.disabled=${busy}),`
+      `${repairButton}.hidden=!1,${repairButton}.disabled=${busy}}`
     );
   },
 };
@@ -378,7 +316,6 @@ const finalizerErrorDetail = {
 };
 
 export const PATCHES = [
-  chatDeleteCleanup,
   moduleTabsDragScroll,
   narrativeTagNormalize,
   narrativeTagProject,

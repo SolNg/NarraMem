@@ -8,7 +8,7 @@ Cài đặt và cách dùng: xem [INSTALL_VI.md](INSTALL_VI.md). Bản gốc ti�
 Extensions → Install extension → https://github.com/SolNg/NarraMem
 ```
 
-Yêu cầu SillyTavern `1.18.0` trở lên. Đang theo bản gốc `0.4.0-beta.75`.
+Yêu cầu SillyTavern `1.18.0` trở lên. Đang theo bản gốc `1.0.0`.
 
 ## Đã dịch những gì
 
@@ -48,32 +48,35 @@ Ngược lại, prompt Recall thì **có** dịch, vì nó không trích xuất 
 
 Nếu bạn muốn *đọc hiểu* nhóm prompt trích xuất đang bảo model làm gì, xem [docs/prompts-vi.md](docs/prompts-vi.md) — bản dịch tham khảo, không phải bản chạy thật.
 
-## Sửa lỗi: xoá chat không dọn Memory Book
+## 1.0.0 có gì mới đáng kể
 
-`INSTALL_BETA.md` của bản gốc nói rằng xoá một cuộc chat sẽ xoá luôn world book Memory Set tương ứng. Thực tế ở beta.60 việc đó **không xảy ra**, và bản này vá lại.
+**Đầu ra chuyển từ JSON sang thẻ văn bản.** Mô-đun không còn bị bắt trả về JSON đúng schema; giờ nó xuất các khối `<NM_ENTITY>key | type | label | …</NM_ENTITY>` phân cách bằng `|`. `response_format` mặc định của bước trích xuất đã đổi thành `tagged_text`. Đây là thay đổi quan trọng nhất với ai từng gặp `JSON_INVALID` liên miên: model dựng dòng có dấu gạch đứng dễ hơn nhiều so với dựng một khối JSON lớn không được sai dấu nào. Mã lỗi tương ứng cũng đổi thành `TAGGED_OUTPUT_INVALID` / `TAGGED_OUTPUT_TRUNCATED`.
 
-Nguyên nhân: handler `CHAT_DELETED` gọi `TavernMemoryRegistry` — registry v1 của kiến trúc cũ. Lớp đó đọc `NarraMem__REGISTRY__v1` và chỉ xoá các sách tên `NarraMem__CONTROL__*`, `NarraMem__ARCHIVE__*` cùng 5 tiền tố v1 khác. Runtime hiện tại lại ghi `NarraMem__MEMORY__<id>` và đăng ký trong `NarraMem__REGISTRY__v2` — cả hai đều nằm ngoài tầm biết của đường code đó, nên nó trả về `NOT_FOUND` và không xoá gì.
+**Xử lý chat cũ theo yêu cầu (backfill).** Trước đây phải chờ đủ 14 lượt AI thì mới có một đợt, và đó là cách duy nhất. 1.0.0 thêm hẳn một luồng riêng: quét chat sẵn có, xếp hàng, chạy, **tạm dừng và tiếp tục được**, và **cỡ đợt chỉnh được từ 1 đến 50** (`manual_backfill_batch_size`, mặc định 10). Với chat có lượt AI dài thì hạ cỡ đợt xuống là cách trực tiếp nhất để giảm kích thước prompt.
 
-Trớ trêu là hàm đúng có tồn tại: `TavernMemoryRegistryStore.deleteChat()` xoá thẳng `memory_book_name`. Nhưng nơi duy nhất gọi nó là `resumePendingDeletions()`, vốn chỉ xử lý bản ghi đã mang trạng thái `DELETE_PENDING` — trạng thái mà chỉ chính `deleteChat()` mới đặt được. Vòng khép kín, không có lối vào, nên nó là code chết.
+**Danh tính chat ổn định.** Memory Set giờ khoá theo một `narramem_stable_chat_id` ghi vào metadata của chat, không còn theo tên file. Đổi tên chat hay tạo nhánh không làm mất ký ức nữa; nhánh được cấp ID riêng thay vì mượn nhầm sách của chat gốc.
 
-Bản vá cho handler gọi `deleteChat()` của v2 trước, rồi vẫn chạy tiếp lượt quét v1 cho các máy còn sách kiến trúc cũ. Hai lời gọi được cô lập nên một cái lỗi không chặn cái kia, và mục chẩn đoán `deleted_chat_memory_cleanup` giờ báo cả hai kết quả:
+**Cổng chờ sinh nội dung chính.** `main-generation-gate.ts` mới giữ cho NarraMem không gọi Memory API trong lúc chat đang sinh câu trả lời — trước đây hai bên có thể tranh nhau quota cùng lúc.
 
-```json
-{"status":"DELETED","legacy_status":"NOT_FOUND","memory_book_removed":true,"deleted_worldbook_count":1}
-```
+Ba prompt trích xuất M1–M7, prompt sửa và prompt nối tiếp đều đã được viết lại cho định dạng thẻ, nên toàn bộ hợp đồng prompt trong bảng dịch cũng được thay mới.
 
-Đối chứng bằng cách chạy thật extension trong jsdom, cho runtime tạo world book rồi phát sự kiện `chat_deleted`:
+
+## Bản vá đã gỡ: xoá chat không dọn Memory Book
+
+Từ beta.60 tới beta.75, xoá một cuộc chat **không** xoá world book Memory Set của nó, dù `INSTALL_BETA.md` nói là có. Handler `CHAT_DELETED` gọi `TavernMemoryRegistry` — registry v1 của kiến trúc cũ, chỉ biết các sách `NarraMem__CONTROL__*` / `NarraMem__ARCHIVE__*`, trong khi runtime ghi `NarraMem__MEMORY__<id>`. Nó trả `NOT_FOUND` và không xoá gì. Hàm đúng có tồn tại nhưng là code chết: `deleteChat()` chỉ được gọi từ `resumePendingDeletions()`, vốn chỉ xử lý bản ghi đã mang `DELETE_PENDING` — trạng thái mà chỉ chính `deleteChat()` mới đặt được.
+
+**1.0.0 đã sửa đúng chỗ này.** Bản gốc thêm `chat-memory-cleanup.ts` gọi thẳng `TavernMemoryRegistryStore.deleteChat()`, và xoá hẳn `memory-registry.ts` cùng registry v1. Bản vá của fork này **đã được gỡ bỏ** vì không còn cần.
+
+Kiểm chứng bằng cách chạy thật extension trong jsdom, cho runtime tạo world book rồi phát `chat_deleted`:
 
 | | `deleteWorldInfo` được gọi | Memory Book | chẩn đoán |
 |---|---|---|---|
-| bundle gốc | **không lần nào** | còn nguyên | `NOT_FOUND`, xoá 0 file |
-| bundle đã vá | có, đúng tên sách | đã xoá | `DELETED`, xoá 1 file |
-
-Bản vá nằm ở `tools/patches.mjs`, neo bằng regex có nhóm bắt để lấy tên định danh sau minify, và tra tên lớp registry v2 qua AST. Nếu bản gốc đổi cấu trúc khiến neo không khớp đúng một lần, `apply` dừng lại báo lỗi thay vì vá bừa.
+| beta.75 chưa vá | **không lần nào** | còn nguyên | `NOT_FOUND`, xoá 0 file |
+| 1.0.0 nguyên bản | có, đúng tên sách | đã xoá | `DELETED`, xoá 1 file |
 
 ## Sửa lỗi: màn hình chính treo ở "Đang kết nối"
 
-beta.67 tách trạng thái nhàn rỗi làm hai, nhưng hai nơi dùng **hai điều kiện khác nhau** cho cùng câu hỏi "đã có chat chưa" — và tới beta.75 vẫn chưa sửa:
+beta.67 tách trạng thái nhàn rỗi làm hai, nhưng hai nơi dùng **hai điều kiện khác nhau** cho cùng câu hỏi "đã có chat chưa" — và tới 1.0.0 vẫn chưa sửa:
 
 ```js
 // Panel  — chỉ xét chat_id
@@ -90,7 +93,7 @@ Bản vá cho panel dùng cùng điều kiện với runtime. Nó chỉ đổi m
 
 | | Hiển thị |
 |---|---|
-| chưa vá | beta.67: "Đang kết nối" treo mãi · beta.70–75: đếm "Đã thu 0/14" cho một chat không tồn tại |
+| chưa vá | beta.67: "Đang kết nối" treo mãi · beta.70 → 1.0.0: đếm "Đã thu 0/14" cho một chat không tồn tại |
 | đã vá | "Hiện không có chat nhân vật nào để xử lý" / "Hãy mở một thẻ nhân vật và lịch sử chat của nó trước." |
 
 ## Cải thiện: kéo chuột để cuộn thanh chip lọc
@@ -170,7 +173,7 @@ dist/index.js        bundle đã Việt hóa (thứ SillyTavern thực sự nạ
 dist/index.js.map    sourcemap của bản gốc, kèm toàn bộ source TypeScript
 l10n/                các prompt bản tiếng Việt
 tools/localize.mjs   công cụ áp bản dịch + bản vá vào bundle
-tools/patches.mjs    các bản vá hành vi (xoá chat, kéo chuột cuộn chip, thử lại khi kẹt)
+tools/patches.mjs    các bản vá hành vi (kéo chuột cuộn chip, thẻ nội dung, thử lại khi kẹt)
 tools/translations.mjs   bảng dịch
 docs/prompts-vi.md   bản dịch tham khảo của prompt trích xuất
 ```

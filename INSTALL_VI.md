@@ -1,6 +1,6 @@
 # Hướng dẫn cài NarraMem (bản tiếng Việt)
 
-Phiên bản: `0.4.0-beta.75`
+Phiên bản: `1.0.0`
 
 SillyTavern tối thiểu: `1.18.0`
 
@@ -23,7 +23,7 @@ Cập nhật về sau dùng chức năng "Update" của trình quản lý extens
 
 1. Mở mục cài extension bên thứ ba của TT, Git URL cũng điền `https://github.com/SolNg/NarraMem`, Branch/Tag để trống.
 2. Cài xong thì tải lại hoặc khởi động lại TT, vào một cuộc chat nhân vật; khi thấy nút "NarraMem" ở khu vực nhập liệu thì cấu hình Memory API riêng theo đúng các bước ở trên.
-3. beta.72 tự dò được host TT và đọc toàn bộ lịch sử chat qua API phân trang chính thức của TT; phân trang hoặc danh tính chat lệch tạm thời thì đọc lại cục bộ có giới hạn, chưa đồng bộ được thì hiện "Đang chờ TT đồng bộ" và người dùng bấm "Làm mới trạng thái" để đọc lại. Khi chính văn đang hiển thị trong lịch sử TT không khớp với swipe đang chọn, NarraMem chỉ lấy chính văn làm chuẩn **bên trong bản sao cache chỉ đọc của riêng nó**, không sửa chat của bạn và không đụng tới các swipe khác. Nó không còn bắt người dùng bật "tải toàn bộ", và cũng không lấy đoạn cửa sổ hiện tại để trích xuất hay ẩn lượt khi API của TT không dùng được.
+3. Từ beta.72 NarraMem tự dò được host TT và đọc toàn bộ lịch sử chat qua API phân trang chính thức của TT; phân trang hoặc danh tính chat lệch tạm thời thì đọc lại cục bộ có giới hạn, chưa đồng bộ được thì hiện "Đang chờ TT đồng bộ" và người dùng bấm "Làm mới trạng thái" để đọc lại. Khi chính văn đang hiển thị trong lịch sử TT không khớp với swipe đang chọn, NarraMem chỉ lấy chính văn làm chuẩn **bên trong bản sao cache chỉ đọc của riêng nó**, không sửa chat của bạn và không đụng tới các swipe khác. Nó không còn bắt người dùng bật "tải toàn bộ", và cũng không lấy đoạn cửa sổ hiện tại để trích xuất hay ẩn lượt khi API của TT không dùng được.
 
 NarraMem là extension thuần frontend, không cần và không chứa plugin backend Node-only của SillyTavern. TT và SillyTavern bản chuẩn dùng chung cùng một gói extension, cùng Memory Core, cùng định dạng world book, cùng Prompt và cùng nhánh cập nhật; sẽ không sinh ra bộ dữ liệu riêng cho TT.
 

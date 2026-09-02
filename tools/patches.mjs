@@ -415,6 +415,58 @@ return el;`;
   },
 };
 
+/**
+ * The 1.0.0 tagged-output parser can hand `undefined` to Canonical JSON.
+ *
+ * `jsonValue()` returns `undefined` for the empty marker `-` and for an empty
+ * string. Three call sites feed its result into a record; the `qualifiers` one
+ * guards with a conditional spread, but these two assign the property directly:
+ *
+ *   knownValue:    status === "known" ? { status, value: jsonValue(raw) } : …
+ *   argumentValue: kind === "literal" ? { kind, value: jsonValue(value) }  : …
+ *
+ * `canonicalize()` walks `Object.keys()`, so a key whose value is `undefined`
+ * reaches the `typeof value !== "object"` branch and throws
+ * `Canonical JSON rejects undefined` — an unmapped TypeError that surfaces as a
+ * raw alert and leaves the module stuck.
+ *
+ * The trigger is the contract obeying itself: every module contract instructs
+ * the model to write `-` for an empty optional value, so `known#-` for a M4
+ * before/after state, or a M5 `NM_ARGUMENT` literal of `-`, is exactly what a
+ * compliant model produces.
+ *
+ * Both patches omit the key instead of inventing a value. The record then fails
+ * the Core wire schema like any other malformed record, which is a mapped error
+ * the targeted-repair path can act on, rather than a crash with no recovery.
+ */
+const taggedKnownValueUndefined = {
+  name: "tagged-known-value-undefined",
+  applied: "__nmKV",
+  // 1: the status binding  2: jsonValue  3: the raw field
+  find: /([\w$]+)==="known"\?\{status:\1,value:([\w$]+)\(([\w$]+)\)\}:\{status:\1,value:\3\}/u,
+  replace(match) {
+    const [, status, jsonValue, raw] = match;
+    return (
+      `${status}==="known"?(__nmKV=>__nmKV===undefined?{status:${status}}:` +
+      `{status:${status},value:__nmKV})(${jsonValue}(${raw})):{status:${status},value:${raw}}`
+    );
+  },
+};
+
+const taggedLiteralArgumentUndefined = {
+  name: "tagged-literal-argument-undefined",
+  applied: "__nmAV",
+  // 1: the kind binding  2: jsonValue  3: the raw field
+  find: /([\w$]+)==="literal"\?\{kind:\1,value:([\w$]+)\(([\w$]+)\)\}:\{kind:\1,value:\3\}/u,
+  replace(match) {
+    const [, kind, jsonValue, raw] = match;
+    return (
+      `${kind}==="literal"?(__nmAV=>__nmAV===undefined?{kind:${kind}}:` +
+      `{kind:${kind},value:__nmAV})(${jsonValue}(${raw})):{kind:${kind},value:${raw}}`
+    );
+  },
+};
+
 export const PATCHES = [
   moduleTabsDragScroll,
   narrativeTagNormalize,
@@ -427,4 +479,6 @@ export const PATCHES = [
   narrativeTagDefaultList,
   hostContextAlias,
   narrativeTagDetectButton,
+  taggedKnownValueUndefined,
+  taggedLiteralArgumentUndefined,
 ];

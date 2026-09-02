@@ -132,6 +132,32 @@ Chuỗi nhập vào được chuẩn hoá tất định: cắt khoảng trắng,
 
 Phần payload của bản vá được tách riêng thành hàm dựng mã trong `tools/patches.mjs` để **kiểm thử độc lập**: 30 test bao phủ tương thích ngược, danh sách nhiều thẻ, thứ tự chọn khối, `*`, và các ràng buộc mà `source-snapshot` kiểm tra ở downstream (`raw_end − raw_start ≥ độ dài text`).
 
+## Sửa lỗi: `Canonical JSON rejects undefined` khi xử lý thủ công
+
+Lỗi mới của 1.0.0, nằm trong bộ phân tích định dạng thẻ vừa được viết lại. `jsonValue()` trả về `undefined` cho dấu `-` và cho chuỗi rỗng. Ba chỗ đưa kết quả đó vào bản ghi; chỗ `qualifiers` có chốt bằng spread có điều kiện, hai chỗ còn lại gán thẳng:
+
+```js
+knownValue:    status === "known" ? { status, value: jsonValue(raw) }  : …   // M4 before/after_state
+argumentValue: kind === "literal" ? { kind,   value: jsonValue(value) } : …   // M5 NM_ARGUMENT
+```
+
+`canonicalize()` duyệt `Object.keys()`, nên một khoá mang giá trị `undefined` rơi xuống nhánh `typeof value !== "object"` và ném `Canonical JSON rejects undefined`. Đó là TypeError không nằm trong bảng ánh xạ mã lỗi, nên nó hiện ra thành alert thô và mô-đun kẹt lại.
+
+Trớ trêu là chính hợp đồng gây ra: mọi hợp đồng mô-đun đều dặn model **viết `-` cho giá trị tuỳ chọn bỏ trống**. Nên `known#-` ở M4, hay một `NM_ARGUMENT` literal bằng `-` ở M5, đúng là thứ một model tuân thủ sẽ sinh ra.
+
+Chạy đúng hai hàm đã ship, trước và sau khi vá:
+
+| Đầu vào | Chưa vá | Đã vá |
+|---|---|---|
+| `known#42` | `{"status":"known","value":42}` | không đổi |
+| `known#-` | ✗ **Canonical JSON rejects undefined** | `{"status":"known"}` |
+| `known#` | ✗ **Canonical JSON rejects undefined** | `{"status":"known"}` |
+| literal `42` | `{"kind":"literal","value":42}` | không đổi |
+| literal `-` | ✗ **Canonical JSON rejects undefined** | `{"kind":"literal"}` |
+
+Bản vá **bỏ hẳn khoá thay vì bịa ra giá trị**. Bản ghi sau đó trượt Core wire schema như mọi bản ghi hỏng khác — một mã lỗi có ánh xạ mà đường sửa chuyên biệt xử lý được — thay vì sập không lối thoát.
+
+
 ## Cải thiện: nút dò thẻ, và mặc định hai thẻ
 
 Bản gốc mặc định `narrative_content_tag` là `content`. Với các preset bọc chính văn trong `story_scene` — rất phổ biến — điều đó **im lặng cho ra rỗng**: phép chiếu fail-closed, mọi lượt AI đóng góp văn bản trắng, và ký ức rốt cuộc chỉ dựng từ lời của chính bạn. Không có cảnh báo nào.

@@ -156,9 +156,91 @@ const narrativeTagDefaultList = {
   replace: () => 'narrative_content_tag:"content, story_scene"',
 };
 
+/**
+ * Give the tag detector a stable handle on SillyTavern's `getContext`.
+ *
+ * The memory center panel is deliberately port-only and never imports the host
+ * context, so the detect button below has no way to reach the chat. Rather than
+ * hardcode the minified import alias — the exact fragility this file warns
+ * about — the alias is captured here and re-bound under a fixed name.
+ */
+const hostContextAlias = {
+  name: "host-context-alias",
+  applied: "__nmCtx",
+  find: /import\{getContext as ([\w$]+)\}from"\/scripts\/st-context\.js";/u,
+  replace(match) {
+    const [whole, alias] = match;
+    return `${whole}var __nmCtx=${alias};`;
+  },
+};
+
+/**
+ * "Dò thẻ trong chat này": fill the tag field from the chat instead of guessing.
+ *
+ * Neither upstream nor this fork detects the tag automatically, and doing it
+ * silently would be actively dangerous: `narrative_content_tag` feeds
+ * `narrative_projection`, which feeds every message's `content_fingerprint`. A
+ * detector that changed its mind would look exactly like an edited chat and
+ * throw away the running batch — the same `active_batch_mutation_rollback` that
+ * already costs users whole extraction runs.
+ *
+ * So detection stays an explicit click. The button scans the assistant turns of
+ * the current chat and ranks candidate tags by how much text their last
+ * complete block actually covers — the same "last complete block" rule the
+ * runtime uses. Ranking by coverage rather than by frequency is what separates
+ * a real wrapper from an inline tag such as `<ja>`, which occurs far more often
+ * but covers almost nothing. It reports every candidate it found and writes the
+ * winner into the input; the setting is still only persisted when the user
+ * saves.
+ */
+const narrativeTagDetectButton = {
+  name: "narrative-tag-detect-button",
+  applied: "nmTagDetect",
+  // 1: the tag input binding  2: the textInput helper  3: the settings object
+  find: /([\w$]+)=([\w$]+)\(([\w$]+)\.narrative_content_tag,"content"\)/u,
+  replace(match) {
+    const [, input, textInput, settings] = match;
+    // `$` is kept away from `{` inside the escape class so this stays writable
+    // as a raw template literal.
+    const payload = String.raw`
+if(el.dataset.nmTagDetect==="1")return el;el.dataset.nmTagDetect="1";
+let btn=document.createElement("button");btn.type="button";btn.className="menu_button narramem-tag-detect";
+btn.textContent="Dò thẻ trong chat này";
+let out=document.createElement("small");out.className="narramem-tag-detect-note";
+out.textContent="Quét các lượt AI của chat hiện tại để tìm thẻ bọc chính văn.";
+let esc=t=>t.replace(/[.*+?^{}()|[\]\\$]/gu,"\\$&");
+btn.addEventListener("click",()=>{
+let chat=[];try{chat=__nmCtx().chat??[]}catch{chat=[]}
+let msgs=chat.filter(m=>m&&m.is_user!==!0&&m.is_system!==!0&&typeof m.mes==="string");
+if(msgs.length===0){out.textContent="Không đọc được lượt AI nào trong chat này.";return}
+let stat=new Map();
+for(let m of msgs){let seen=new Set();
+for(let g of m.mes.matchAll(/<([A-Za-z][\w:.-]{0,63})>/gu)){let tag=g[1];if(seen.has(tag))continue;seen.add(tag);
+let op=new RegExp("<"+esc(tag)+">","giu"),cl=new RegExp("</"+esc(tag)+">","giu"),last=null,cur=0;
+while(cur<m.mes.length){op.lastIndex=cur;let o=op.exec(m.mes);if(o===null)break;
+let st=o.index+o[0].length;cl.lastIndex=st;let c=cl.exec(m.mes);if(c===null)break;
+last={start:st,end:c.index};cur=c.index+c[0].length}
+if(last===null)continue;
+let e=stat.get(tag)??{n:0,len:0};e.n+=1;e.len+=last.end-last.start;stat.set(tag,e)}}
+let ranked=[...stat.entries()].sort((a,b)=>b[1].len-a[1].len||b[1].n-a[1].n||a[0].localeCompare(b[0]));
+if(ranked.length===0){out.textContent="Không thấy thẻ bọc hoàn chỉnh nào trong "+msgs.length+" lượt AI. Preset này có thể không bọc thẻ — thử thêm mục * để lấy toàn văn.";return}
+out.textContent="Tìm thấy: "+ranked.slice(0,6).map(r=>r[0]+" ("+r[1].n+"/"+msgs.length+" lượt, ~"+Math.round(r[1].len/1000)+"k ký tự)").join(" · ")+". Đã điền thẻ bao phủ nhiều nhất; bấm Lưu để áp dụng.";
+el.value=ranked[0][0]});
+queueMicrotask(()=>{let host=el.parentElement;if(host===null)return;
+let row=document.createElement("div");row.className="narramem-tag-detect-row";row.append(btn,out);host.append(row)});
+return el;`;
+    return (
+      `${input}=(el=>{${payload}\n})(` +
+      `${textInput}(${settings}.narrative_content_tag,"content, story_scene"))`
+    );
+  },
+};
+
 export const PATCHES = [
   moduleTabsDragScroll,
   narrativeTagNormalize,
   narrativeTagProject,
   narrativeTagDefaultList,
+  hostContextAlias,
+  narrativeTagDetectButton,
 ];

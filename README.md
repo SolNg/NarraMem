@@ -89,11 +89,11 @@ Phần payload của bản vá được tách riêng thành hàm dựng mã tron
 Bản này cố ý giữ **rất ít** thay đổi so với bản gốc. Chỉ hai việc:
 
 1. **Kéo chuột để cuộn thanh chip lọc** — thuần giao diện.
-2. **Thẻ bọc nội dung AI nhận nhiều thẻ** — kèm mặc định `content, story_scene`.
+2. **Thẻ bọc nội dung AI**: nhận nhiều thẻ, mặc định `content, story_scene`, kèm nút **"Dò thẻ trong chat này"** để điền thẻ từ chat thay vì đoán.
 
-Tổng cộng 4 mục trong `tools/patches.mjs` (việc thứ hai cần ba mục: chuẩn hoá danh sách, chiếu theo danh sách, và giá trị mặc định).
+Tổng cộng 6 mục trong `tools/patches.mjs` — việc thứ hai cần năm mục: chuẩn hoá danh sách, chiếu theo danh sách, giá trị mặc định, và hai mục cho nút dò (một để bắt bí danh `getContext`, một để dựng nút).
 
-Các bản vá từng có trong fork này — sửa lỗi xoá chat, nút thử lại khi kẹt biên dịch, ghi chi tiết lỗi finalizer, nút dò thẻ, chốt `Canonical JSON rejects undefined` — **đã được gỡ bỏ theo yêu cầu**. Một số trong đó bản gốc đã tự sửa (lỗi xoá chat ở 1.0.0, lỗi `undefined` ở 2.0.2), số còn lại thì lỗi vẫn còn nhưng fork không đụng tới nữa.
+Các bản vá từng có trong fork này — sửa lỗi xoá chat, nút thử lại khi kẹt biên dịch, ghi chi tiết lỗi finalizer, chốt `Canonical JSON rejects undefined` — **đã được gỡ bỏ theo yêu cầu**. Một số trong đó bản gốc đã tự sửa (lỗi xoá chat ở 1.0.0, lỗi `undefined` ở 2.0.2), số còn lại thì lỗi vẫn còn nhưng fork không đụng tới nữa.
 
 **Hệ quả cần biết:** hai lỗi sau của bản gốc quay trở lại, vì bản vá tương ứng đã bị gỡ.
 
@@ -108,7 +108,7 @@ dist/index.js        bundle đã Việt hóa (thứ SillyTavern thực sự nạ
 dist/index.js.map    sourcemap của bản gốc, kèm toàn bộ source TypeScript
 l10n/                các prompt bản tiếng Việt
 tools/localize.mjs   công cụ áp bản dịch + bản vá vào bundle
-tools/patches.mjs    hai bản vá hành vi (cuộn chip bằng chuột, thẻ bọc nội dung)
+tools/patches.mjs    bản vá hành vi (cuộn chip bằng chuột, thẻ bọc nội dung + nút dò)
 tools/translations.mjs   bảng dịch
 docs/prompts-vi.md   bản dịch tham khảo của prompt trích xuất
 ```

@@ -6,7 +6,7 @@
   "js": "dist/index.js",
   "css": "style.css",
   "author": "三明月 / NarraMem contributors (bản tiếng Việt: SolNg)",
-  "version": "1.0.0",
+  "version": "2.0.2",
   "homePage": "https://github.com/SolNg/NarraMem",
   "auto_update": false,
   "minimum_client_version": "1.18.0"

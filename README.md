@@ -8,7 +8,7 @@ Cài đặt và cách dùng: xem [INSTALL_VI.md](INSTALL_VI.md). Bản gốc ti�
 Extensions → Install extension → https://github.com/SolNg/NarraMem
 ```
 
-Yêu cầu SillyTavern `1.18.0` trở lên. Đang theo bản gốc `1.0.0`.
+Yêu cầu SillyTavern `1.18.0` trở lên. Đang theo bản gốc `2.0.2`.
 
 ## Đã dịch những gì
 
@@ -48,54 +48,6 @@ Ngược lại, prompt Recall thì **có** dịch, vì nó không trích xuất 
 
 Nếu bạn muốn *đọc hiểu* nhóm prompt trích xuất đang bảo model làm gì, xem [docs/prompts-vi.md](docs/prompts-vi.md) — bản dịch tham khảo, không phải bản chạy thật.
 
-## 1.0.0 có gì mới đáng kể
-
-**Đầu ra chuyển từ JSON sang thẻ văn bản.** Mô-đun không còn bị bắt trả về JSON đúng schema; giờ nó xuất các khối `<NM_ENTITY>key | type | label | …</NM_ENTITY>` phân cách bằng `|`. `response_format` mặc định của bước trích xuất đã đổi thành `tagged_text`. Đây là thay đổi quan trọng nhất với ai từng gặp `JSON_INVALID` liên miên: model dựng dòng có dấu gạch đứng dễ hơn nhiều so với dựng một khối JSON lớn không được sai dấu nào. Mã lỗi tương ứng cũng đổi thành `TAGGED_OUTPUT_INVALID` / `TAGGED_OUTPUT_TRUNCATED`.
-
-**Xử lý chat cũ theo yêu cầu (backfill).** Trước đây phải chờ đủ 14 lượt AI thì mới có một đợt, và đó là cách duy nhất. 1.0.0 thêm hẳn một luồng riêng: quét chat sẵn có, xếp hàng, chạy, **tạm dừng và tiếp tục được**, và **cỡ đợt chỉnh được từ 1 đến 50** (`manual_backfill_batch_size`, mặc định 10). Với chat có lượt AI dài thì hạ cỡ đợt xuống là cách trực tiếp nhất để giảm kích thước prompt.
-
-**Danh tính chat ổn định.** Memory Set giờ khoá theo một `narramem_stable_chat_id` ghi vào metadata của chat, không còn theo tên file. Đổi tên chat hay tạo nhánh không làm mất ký ức nữa; nhánh được cấp ID riêng thay vì mượn nhầm sách của chat gốc.
-
-**Cổng chờ sinh nội dung chính.** `main-generation-gate.ts` mới giữ cho NarraMem không gọi Memory API trong lúc chat đang sinh câu trả lời — trước đây hai bên có thể tranh nhau quota cùng lúc.
-
-Ba prompt trích xuất M1–M7, prompt sửa và prompt nối tiếp đều đã được viết lại cho định dạng thẻ, nên toàn bộ hợp đồng prompt trong bảng dịch cũng được thay mới.
-
-
-## Bản vá đã gỡ: xoá chat không dọn Memory Book
-
-Từ beta.60 tới beta.75, xoá một cuộc chat **không** xoá world book Memory Set của nó, dù `INSTALL_BETA.md` nói là có. Handler `CHAT_DELETED` gọi `TavernMemoryRegistry` — registry v1 của kiến trúc cũ, chỉ biết các sách `NarraMem__CONTROL__*` / `NarraMem__ARCHIVE__*`, trong khi runtime ghi `NarraMem__MEMORY__<id>`. Nó trả `NOT_FOUND` và không xoá gì. Hàm đúng có tồn tại nhưng là code chết: `deleteChat()` chỉ được gọi từ `resumePendingDeletions()`, vốn chỉ xử lý bản ghi đã mang `DELETE_PENDING` — trạng thái mà chỉ chính `deleteChat()` mới đặt được.
-
-**1.0.0 đã sửa đúng chỗ này.** Bản gốc thêm `chat-memory-cleanup.ts` gọi thẳng `TavernMemoryRegistryStore.deleteChat()`, và xoá hẳn `memory-registry.ts` cùng registry v1. Bản vá của fork này **đã được gỡ bỏ** vì không còn cần.
-
-Kiểm chứng bằng cách chạy thật extension trong jsdom, cho runtime tạo world book rồi phát `chat_deleted`:
-
-| | `deleteWorldInfo` được gọi | Memory Book | chẩn đoán |
-|---|---|---|---|
-| beta.75 chưa vá | **không lần nào** | còn nguyên | `NOT_FOUND`, xoá 0 file |
-| 1.0.0 nguyên bản | có, đúng tên sách | đã xoá | `DELETED`, xoá 1 file |
-
-## Sửa lỗi: màn hình chính treo ở "Đang kết nối"
-
-beta.67 tách trạng thái nhàn rỗi làm hai, nhưng hai nơi dùng **hai điều kiện khác nhau** cho cùng câu hỏi "đã có chat chưa" — và tới 1.0.0 vẫn chưa sửa:
-
-```js
-// Panel  — chỉ xét chat_id
-describeNoChatRuntimeState(port.getCurrentIdentity().chat_id !== null)
-// Runtime — xét cả hai
-if (identity.character_id === null || identity.chat_id === null) → no_chat
-```
-
-SillyTavern vẫn trả về `chat_id` của chat mở gần nhất khi bạn đang ở màn hình chính. Nên khi chưa chọn nhân vật: panel thấy `chat_id` có giá trị và báo "Đang kết nối chat hiện tại" kèm thanh tiến trình, còn runtime thấy `character_id` null nên đứng yên ở `no_chat`. Hai bên không bao giờ gặp nhau — spinner quay vô hạn, đúng chỗ đáng lẽ phải bảo người dùng mở thẻ nhân vật.
-
-Bản vá cho panel dùng cùng điều kiện với runtime. Nó chỉ đổi một biến boolean nuôi một dòng chữ: không đụng dữ liệu, không đụng ký ức, không đụng hash Checkpoint.
-
-Đối chứng trong jsdom với `characterId` không xác định và `chat_id` khác null:
-
-| | Hiển thị |
-|---|---|
-| chưa vá | beta.67: "Đang kết nối" treo mãi · beta.70 → 1.0.0: đếm "Đã thu 0/14" cho một chat không tồn tại |
-| đã vá | "Hiện không có chat nhân vật nào để xử lý" / "Hãy mở một thẻ nhân vật và lịch sử chat của nó trước." |
-
 ## Cải thiện: kéo chuột để cuộn thanh chip lọc
 
 Thanh chip trong tab Ký ức (`Nhân vật & Thực thể`, `Cảnh & Chương`, …) cuộn ngang được, nhưng CSS gốc đặt `scrollbar-width: none` nên trên máy tính không còn cách nào chạm tới các chip nằm ngoài mép — chuột không kéo được, chỉ còn phím mũi tên.
@@ -132,97 +84,22 @@ Chuỗi nhập vào được chuẩn hoá tất định: cắt khoảng trắng,
 
 Phần payload của bản vá được tách riêng thành hàm dựng mã trong `tools/patches.mjs` để **kiểm thử độc lập**: 30 test bao phủ tương thích ngược, danh sách nhiều thẻ, thứ tự chọn khối, `*`, và các ràng buộc mà `source-snapshot` kiểm tra ở downstream (`raw_end − raw_start ≥ độ dài text`).
 
-## Sửa lỗi: `Canonical JSON rejects undefined` khi xử lý thủ công
+## Phạm vi: chỉ hai thay đổi hành vi
 
-Lỗi mới của 1.0.0, nằm trong bộ phân tích định dạng thẻ vừa được viết lại. `jsonValue()` trả về `undefined` cho dấu `-` và cho chuỗi rỗng. Ba chỗ đưa kết quả đó vào bản ghi; chỗ `qualifiers` có chốt bằng spread có điều kiện, hai chỗ còn lại gán thẳng:
+Bản này cố ý giữ **rất ít** thay đổi so với bản gốc. Chỉ hai việc:
 
-```js
-knownValue:    status === "known" ? { status, value: jsonValue(raw) }  : …   // M4 before/after_state
-argumentValue: kind === "literal" ? { kind,   value: jsonValue(value) } : …   // M5 NM_ARGUMENT
-```
+1. **Kéo chuột để cuộn thanh chip lọc** — thuần giao diện.
+2. **Thẻ bọc nội dung AI nhận nhiều thẻ** — kèm mặc định `content, story_scene`.
 
-`canonicalize()` duyệt `Object.keys()`, nên một khoá mang giá trị `undefined` rơi xuống nhánh `typeof value !== "object"` và ném `Canonical JSON rejects undefined`. Đó là TypeError không nằm trong bảng ánh xạ mã lỗi, nên nó hiện ra thành alert thô và mô-đun kẹt lại.
+Tổng cộng 4 mục trong `tools/patches.mjs` (việc thứ hai cần ba mục: chuẩn hoá danh sách, chiếu theo danh sách, và giá trị mặc định).
 
-Trớ trêu là chính hợp đồng gây ra: mọi hợp đồng mô-đun đều dặn model **viết `-` cho giá trị tuỳ chọn bỏ trống**. Nên `known#-` ở M4, hay một `NM_ARGUMENT` literal bằng `-` ở M5, đúng là thứ một model tuân thủ sẽ sinh ra.
+Các bản vá từng có trong fork này — sửa lỗi xoá chat, nút thử lại khi kẹt biên dịch, ghi chi tiết lỗi finalizer, nút dò thẻ, chốt `Canonical JSON rejects undefined` — **đã được gỡ bỏ theo yêu cầu**. Một số trong đó bản gốc đã tự sửa (lỗi xoá chat ở 1.0.0, lỗi `undefined` ở 2.0.2), số còn lại thì lỗi vẫn còn nhưng fork không đụng tới nữa.
 
-Chạy đúng hai hàm đã ship, trước và sau khi vá:
+**Hệ quả cần biết:** hai lỗi sau của bản gốc quay trở lại, vì bản vá tương ứng đã bị gỡ.
 
-| Đầu vào | Chưa vá | Đã vá |
-|---|---|---|
-| `known#42` | `{"status":"known","value":42}` | không đổi |
-| `known#-` | ✗ **Canonical JSON rejects undefined** | `{"status":"known"}` |
-| `known#` | ✗ **Canonical JSON rejects undefined** | `{"status":"known"}` |
-| literal `42` | `{"kind":"literal","value":42}` | không đổi |
-| literal `-` | ✗ **Canonical JSON rejects undefined** | `{"kind":"literal"}` |
+- **Màn hình chính treo ở "Đang tải".** Panel vẫn chỉ xét `chat_id !== null`, trong khi runtime xét cả `character_id`. SillyTavern vẫn trả `chat_id` của chat mở gần nhất khi bạn đang ở màn hình chính, nên hai bên không bao giờ gặp nhau. Đã kiểm lại trên 2.0.2: `const hasCurrentChat = currentIdentity.chat_id !== null;` vẫn nguyên. Harness `e2e-nochar2` vì vậy báo SAI — đó là kết quả **đúng như dự kiến**, không phải hồi quy.
+- **Nút xử lý thủ công bị ẩn khi đợt kẹt ở `FINALIZING`**, khiến không có nút nào để bấm. Lối thoát là nút "Làm mới trạng thái" ở tab Tổng quan.
 
-Bản vá **bỏ hẳn khoá thay vì bịa ra giá trị**. Bản ghi sau đó trượt Core wire schema như mọi bản ghi hỏng khác — một mã lỗi có ánh xạ mà đường sửa chuyên biệt xử lý được — thay vì sập không lối thoát.
-
-
-## Cải thiện: nút dò thẻ, và mặc định hai thẻ
-
-Bản gốc mặc định `narrative_content_tag` là `content`. Với các preset bọc chính văn trong `story_scene` — rất phổ biến — điều đó **im lặng cho ra rỗng**: phép chiếu fail-closed, mọi lượt AI đóng góp văn bản trắng, và ký ức rốt cuộc chỉ dựng từ lời của chính bạn. Không có cảnh báo nào.
-
-Vì bộ chuẩn hoá của bản này nhận danh sách nhiều thẻ, mặc định được đổi thành `content, story_scene`. Giá trị mặc định chỉ áp dụng cho máy cài mới; thiết lập đã lưu luôn thắng, nên không `content_fingerprint` nào dịch chuyển vì thay đổi này.
-
-Kèm theo là nút **"Dò thẻ trong chat này"** ngay dưới ô nhập. Nó quét các lượt AI của chat hiện tại, **xếp hạng thẻ theo lượng chữ mà khối hoàn chỉnh cuối cùng của nó thật sự bao phủ** — đúng quy tắc "khối hoàn chỉnh cuối cùng" mà runtime dùng — rồi báo cáo và điền thẻ thắng vào ô.
-
-Xếp theo độ bao phủ chứ không theo số lần xuất hiện là điểm mấu chốt. Trong một chat song ngữ thật, `<ja>` xuất hiện ở **đủ 12/12 lượt**, y hệt `story_scene`; nếu đếm tần suất thì hai bên hoà. Nhưng `story_scene` bao 230k ký tự còn `<ja>` chỉ 1k:
-
-```
-Tìm thấy: story_scene (12/12 lượt, ~230k ký tự) · thinking (12/12 lượt, ~96k ký tự)
-        · status (12/12 lượt, ~4k ký tự) · ja (12/12 lượt, ~1k ký tự)
-```
-
-### Vì sao không dò tự động
-
-Đây không phải ngại làm mà là tránh một lỗi tệ hơn:
-
-```
-narrative_content_tag → narrative_projection → content_fingerprint
-                                                      ↓
-                                    đổi = active_batch_mutation_rollback
-```
-
-Một bộ dò tự động mà đổi ý — thêm một lượt AI dùng thẻ khác, hay một lượt không bọc thẻ — sẽ trông y hệt như người dùng vừa sửa chat, và **xoá sạch đợt đang chạy**, âm thầm, không ai bấm gì. Đổi một lỗi nhìn thấy được lấy một lỗi không nhìn thấy được.
-
-Nên dò vẫn là hành động bạn chủ động bấm. Ô thiết lập vẫn là nguồn sự thật duy nhất, và fingerprint chỉ đổi khi bạn cố ý lưu.
-
-Bản vá được kiểm bằng cách **cắt đúng đoạn mã đã chèn ra khỏi `dist/index.js` rồi chạy nó trong jsdom**: 16 test phủ chat rỗng, preset `content`, preset song ngữ nhiều thẻ lồng nhau, preset không bọc thẻ (không ghi đè ô nhập, gợi ý dùng `*`), thẻ mở mà không đóng, tên thẻ có ký tự đặc biệt, và trường hợp `getContext` ném lỗi.
-
-
-## Sửa lỗi: kẹt cứng khi biên dịch Checkpoint thất bại
-
-Khi cả 7 mô-đun đã xong, đợt chuyển sang `FINALIZING` và extension biên dịch Checkpoint tin cậy **ngay tại máy, không gọi model**. Nếu bước đó ném lỗi, `commitFailure()` ghi `finalization_error_code` nhưng **cố ý giữ nguyên trạng thái `FINALIZING`** — chính chú thích trong contract của bản gốc nói bước này "vẫn thử lại được, Checkpoint cũ vẫn còn hiệu lực".
-
-Vấn đề là chẳng có gì thử lại nó, và giao diện thì giấu mất cái nút duy nhất:
-
-```js
-// runtime bắt lỗi -> đăng snapshot "failed"
-shouldContinue = ["running", "finalizing", "recall_ready"].includes(status)
-// "failed" không nằm trong đó -> chuỗi chạy nền 1,5s dừng hẳn
-
-// panel: hộp lỗi hiện ra, nhưng nút thì
-manualRepair.hidden = findManualRepairModule(module_states, batch_status) === null
-// hàm đó chỉ trả về mô-đun khi batch_status là NEEDS_USER hoặc READY.
-// Ở đây batch_status = FINALIZING và cả 7 mô-đun đều COMMITTED -> null -> ẩn nút.
-```
-
-Kết quả đúng như ảnh người dùng gửi: hộp đỏ ghi `FINALIZER_CONTRACT_FAILED · Đã xong 7 mô-đun nhưng biên dịch tin cậy / kiểm chứng Checkpoint thất bại`, dòng "Mô-đun lỗi: **không rõ**" (vì `active_module_id` là null), và **không có nút nào để bấm**.
-
-Máy trạng thái vốn không hỏng — vào lại nó là biên dịch lại. Bản vá thôi giấu điều đó: nút luôn hiện khi hộp lỗi hiện, và khi không có mô-đun riêng lẻ nào sửa được thì nút tự đổi nhãn thành **"Thử lại bước đang kẹt (không tốn lần gọi)"** và chạy đúng `on_refresh()` — cùng hàm nằm sau nút "Làm mới trạng thái". Nhãn gốc được nút tự ghi nhớ ở lần vẽ đầu tiên nên bản dịch không bị chép lại lần hai trong mã vá.
-
-| | Khi 7 mô-đun xong nhưng biên dịch hỏng |
-|---|---|
-| chưa vá | hộp lỗi hiện, nút bị ẩn, chuỗi chạy nền dừng — chỉ thoát được bằng "Làm mới trạng thái" ở tab Tổng quan, nếu người dùng đoán ra |
-| đã vá | nút hiện ngay trong hộp lỗi, đổi nhãn, bấm là biên dịch lại |
-
-## Sửa lỗi: thông báo lỗi thật của bước biên dịch bị vứt đi
-
-`finalizationError()` ánh xạ 8 thông báo nó nhận ra thành mã riêng, rồi dồn **mọi thứ còn lại** vào `FINALIZER_CONTRACT_FAILED`. Cái mã gộp đó phủ ít nhất 6 lỗi hoàn toàn khác nhau — `M3 has no complete cold-readable partition`, `Novel Evidence … is missing from the current ledger`, `THREAD_IMPACT head is not an object`, `Checkpoint semantic record … is duplicated or misidentified`, … Chẩn đoán lại chỉ ghi đúng cái mã, nên nhật ký không phân biệt được, còn panel chỉ hiện một câu chung chung. Không ai chẩn được gì.
-
-Bản vá ghi kèm thông báo gốc vào mục `error_detail`. Toàn bộ nhóm thông báo này đều là cấu trúc — mã mô-đun, record ID, evidence ID, đều là hash — nên lời hứa `content_recorded: false` vẫn đúng. Ngoại lệ duy nhất là thông báo Core wire schema: nó nhúng báo cáo của bộ kiểm schema và có thể trích một giá trị trường ra, nên phần đuôi bị cắt (`event failed Core wire schema: <lược bỏ>`) thay vì ghi thẳng.
-
-Ba bản vá này được kiểm bằng cách **cắt đúng đoạn mã đã chèn ra khỏi `dist/index.js` rồi chạy nó**, không viết lại logic: 23 test phủ cả hai nhánh của nút, việc nhớ/khôi phục nhãn, trạng thái bận, lỗi TT im lặng, và việc lược bỏ nội dung nhạy cảm.
 
 ## Cấu trúc repo
 
@@ -231,7 +108,7 @@ dist/index.js        bundle đã Việt hóa (thứ SillyTavern thực sự nạ
 dist/index.js.map    sourcemap của bản gốc, kèm toàn bộ source TypeScript
 l10n/                các prompt bản tiếng Việt
 tools/localize.mjs   công cụ áp bản dịch + bản vá vào bundle
-tools/patches.mjs    các bản vá hành vi (thẻ nội dung, dò thẻ, cuộn chip, thử lại khi kẹt)
+tools/patches.mjs    hai bản vá hành vi (cuộn chip bằng chuột, thẻ bọc nội dung)
 tools/translations.mjs   bảng dịch
 docs/prompts-vi.md   bản dịch tham khảo của prompt trích xuất
 ```

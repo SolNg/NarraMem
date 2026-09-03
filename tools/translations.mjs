@@ -52,17 +52,23 @@ export const FILE_OVERRIDES = [
  * matches on it, so translating it would orphan an already saved API key.
  */
 export const KEEP_PREFIXES = [
-  "你只执行 NarraMem 模块", // M1-M7 task prompts
-  "你正在执行 NarraMem 当前", // NM-P0034 repair system
-  "本条 System 是 NarraMem", // NM-P0032 material envelope
   "NarraMem 叙忆 - ", // SillyTavern secret label
-  // 1.0.0 replaced the JSON output contracts with a pipe-delimited tagged-text
-  // format. The old "只返回一个 M" / "现在只返回当前 module_id" / JSON continuation
-  // prompts are gone; these are their replacements.
-  "只输出 M", // M1-M7 tagged-output contracts
-  "你正在修复 NarraMem 当前", // tagged repair contract
-  "前一条 Assistant 内容在一个固定标签记录中途截断", // tagged continuation
-  "现在只返回当前 module_id", // tagged repair output contract
+  // 2.0.2 rewrote every extraction prompt again: the task descriptions are much
+  // shorter, the output contracts moved to a `返回 M<n>` pipe format, and the
+  // repair pair plus the material envelope were reworded. These stay Chinese —
+  // their SHA-256 is sealed into every Checkpoint.
+  "返回 M", // M1-M7 output contracts
+  "从当前原文片段、角色资料和已有实体中识别", // M1 task
+  "把当前原文片段划分为连续场景", // M2 task
+  "从已确认场景中提取实际发生的经历与事件", // M3 task
+  "根据当前事件识别可由原文证明的状态变化", // M4 task
+  "分别记录角色当前知道、相信、怀疑", // M5 task
+  "在已确认事件、状态变化和认知变化之间建立", // M6 task
+  "从当前事件、状态、认知和因果中识别", // M7 task
+  "当前调用用于修正本模块尚未通过的记录", // repair system
+  "这是修正调用。", // repair output contract
+  "接下来的 `<NARRAMEM_MATERIAL>`", // material envelope
+  "前一条 Assistant 内容在一个固定标签记录中途截断", // continuation
 ];
 
 /**
@@ -362,8 +368,6 @@ export const TRANSLATIONS = {
   "无法确认本地密钥状态：{0}": "Không xác nhận được trạng thái Key cục bộ: {0}",
   "读取模型失败：{0}": "Tải danh sách model thất bại: {0}",
   "请先填写并保存 Memory API Key": "Hãy điền và lưu Memory API Key trước",
-  "无法读取当前酒馆角色资料／世界书（{0}）":
-    "Không đọc được thẻ nhân vật / world book của SillyTavern ({0})",
 
   // --- Runtime errors -------------------------------------------------------
   "NarraMem 运行时尚未启用": "Tiến trình NarraMem chưa được bật",
@@ -507,14 +511,12 @@ export const TRANSLATIONS = {
   "NarraMem 叙忆 {0}": "NarraMem {0}",
   "未填写的生成参数使用模型默认值。": "Tham số sinh nào bỏ trống sẽ dùng mặc định của model.",
   "查看、导出或删除各聊天保存的记忆": "Xem, xuất hoặc xoá ký ức đã lưu của từng chat",
-  "重新处理这一项（调用 1 次模型）": "Xử lý lại mục này (gọi model 1 lần)",
   "使用 DeepSeek 官方接口。": "Dùng API chính thức của DeepSeek.",
   "{0} · 已调用模型 {1} 次": "{0} · đã gọi model {1} lần",
   "本次整理未完成，可以在此重新处理。": "Lần xử lý này chưa xong, có thể xử lý lại ở đây.",
   "请先切换到其他聊天，再删除这份记忆": "Hãy chuyển sang chat khác rồi mới xoá ký ức này",
   "当前聊天没有等待开始的旧聊天整理任务": "Chat hiện tại không có tác vụ xử lý chat cũ nào đang chờ bắt đầu",
   "用于排查问题，不包含 API Key": "Dùng để tìm lỗi, không chứa API Key",
-  "可以重新处理，或下载诊断日志后反馈。": "Có thể xử lý lại, hoặc tải nhật ký chẩn đoán rồi báo lỗi.",
   "打开 NarraMem 叙忆 {0}": "Mở NarraMem {0}",
   "当前聊天的稳定身份与旧记忆登记发生冲突": "Danh tính ổn định của chat hiện tại xung đột với đăng ký ký ức cũ",
   "自动续接被截断的单项结果（额外消耗调用）": "Tự nối tiếp kết quả từng mục bị cắt (tốn thêm lượt gọi)",
@@ -554,4 +556,20 @@ export const TRANSLATIONS = {
     "Bắt đầu xử lý {0} lượt AI còn lại? Ước tính {1} đợt, bình thường mỗi đợt gọi model 7 lần. Hỏng thì dừng lại, phần hỏng sẽ không bị thu gọn.",
   "隐私警告：核心数据可能包含聊天原文、角色资料、世界状态、因果证据和会话标识。导出不包含接口地址或 API Key。请只发送给你信任的人。":
     "Cảnh báo riêng tư: dữ liệu lõi có thể chứa nguyên văn chat, thông tin nhân vật, trạng thái thế giới, bằng chứng nhân quả và mã định danh phiên. Bản xuất không chứa địa chỉ API hay API Key. Chỉ gửi cho người bạn tin tưởng.",
+
+  // --- 2.0.2: resume-batch flow -------------------------------------------
+  "继续本批次": "Tiếp tục đợt này",
+  "正在继续…": "Đang tiếp tục…",
+  "继续本批次失败：{0}": "Tiếp tục đợt này thất bại: {0}",
+  "酒馆世界书激活扫描未完成": "Quét kích hoạt world book của SillyTavern chưa xong",
+  "重新处理当前项（调用 1 次模型）": "Xử lý lại mục hiện tại (gọi model 1 lần)",
+  "可以继续处理；已经完成的内容不会重做。": "Có thể xử lý tiếp; phần đã xong sẽ không làm lại.",
+  "可以继续本批次，或下载诊断日志后反馈。": "Có thể tiếp tục đợt này, hoặc tải nhật ký chẩn đoán rồi báo lỗi.",
+  "记忆尚未保存完成，可以重新处理当前项。": "Ký ức chưa lưu xong, có thể xử lý lại mục hiện tại.",
+  "重新处理剩余 {0} 项（调用 1 次模型）": "Xử lý lại {0} mục còn lại (gọi model 1 lần)",
+  "记忆保存遇到冲突，可以点击“继续本批次”恢复。": "Lưu ký ức gặp xung đột, bấm “Tiếp tục đợt này” để khôi phục.",
+  "宿主返回了无法识别的错误，请打开日志与数据查看错误代码。":
+    "Host trả về lỗi không nhận diện được; hãy mở Nhật ký & Dữ liệu để xem mã lỗi.",
+  "还有 {0} 项需要处理；本次会重新处理全部剩余项，已经完成的内容不会重做。":
+    "Còn {0} mục cần xử lý; lần này sẽ xử lý lại toàn bộ phần còn lại, phần đã xong không làm lại.",
 };
